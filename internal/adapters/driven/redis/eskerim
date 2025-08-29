@@ -1,0 +1,26 @@
+1) 
+
+docker exec -it leetboard-redis sh
+
+# leetboard-redis - container name or id
+
+
+2)
+redis-cli -a "$REDIS_PASS"
+
+
+3)
+SELECT 1
+
+# by default is 0
+
+4)
+DBSIZE
+# to know how many keys
+
+5) see all keys
+KEYS *
+
+6)
+GET somekey
+

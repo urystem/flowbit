@@ -1,0 +1,37 @@
+templates, err := template.ParseGlob("web/templates/*.html")
+if err != nil {
+	log.Fatal("Error parsing templates:", err)
+}
+err = templates.ExecuteTemplate(w, "create-post.html", data)
+if err != nil {
+	http.Error(w, "Template execution error", http.StatusInternalServerError)
+}
+
+
+#----------------------------------------------
+tmpl, err := template.ParseFiles(
+    "web/templates/layout.html",
+    "web/templates/index.html",
+    "web/templates/about.html",
+)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Теперь можешь выполнить конкретный шаблон:
+tmpl.ExecuteTemplate(w, "index.html", data)
+
+
+-----------------------------------------------------------------
+
+tmpl, err := template.ParseFiles("web/templates/catalog.html")
+if err != nil {
+	slog.Error(err.Error())
+	errData := &domain.ErrorPageData{
+		Code:    http.StatusInternalServerError,
+		Message: err.Error(),
+	}
+
+	h.renderError(w, errData)
+	return
+}

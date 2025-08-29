@@ -1,0 +1,62 @@
+services:
+    app:
+      build: .
+      ports:
+      - ${HOST_PORT:-8080}:${SERVER_PORT:-8080}
+      container_name: leetboard-app
+      env_file:
+        - .env
+      # environment:
+      #   SERVER_PORT: ${SERVER_PORT:-8080}
+      #   REDIS_PORT: ${REDIS_PORT:-6379}
+      #   REDIS_PASS: ${REDIS_PASS:-mypassword}
+      #   SESSION_NAME: ${SESSION_NAME:-sessionID}
+      #   SESSION_DURATION: ${SESSION_DURATION:-7}
+       
+      #   DB_HOST: ${DB_HOST:-leetboardDB}
+      #   DB_PORT: ${DB_PORT:-5432}
+      #   DB_USER: ${DB_USER:-ukabdoll}
+      #   DB_PASSWORD: ${DB_PASSWORD:-07654321}
+      #   DB_NAME: ${DB_NAME:-1337b04rd}
+      #   DB_SSLMODE: ${DB_SSLMODE:-disable}
+      depends_on:
+        redisDB:
+          condition: service_healthy
+          # condition: service_started
+        db:
+          condition: service_healthy
+    redisDB:
+      image: redis
+      # image: redis:alpine
+      container_name: leetboard-redis
+      ports:
+      - "${REDIS_PORT:-6379}:6379"
+      command: sh -c "redis-server --requirepass \"$REDIS_PASS\"" # to set password
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 3s
+        timeout: 3s
+        retries: 5
+    db:
+      image: postgres:alpine
+      container_name: leetboard_db
+      ports:
+       - ${DB_PORT:-5432}:5432
+      environment:
+        POSTGRES_USER: ${DB_USER:-ukabdoll}
+        POSTGRES_PASSWORD: ${DB_PASSWORD:-07654321}
+        POSTGRES_DB: ${DB_NAME:-1337b04rd}
+      volumes:
+        - ./internal/adapters/driven/postgres/migration/init.sql:/docker-entrypoint-initdb.d/init.sql
+      healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+        interval: 3s
+        timeout: 5s
+        retries: 10 # Если база данных заработает после всех retries, контейнер не вернется в healthy автоматически!
+
+      # volumes:
+      #   - ./minio/data:/data   # ⬅ сохраняем в ./data локально
+      #   - ./minio/certs:/root/.minio/certs 
+
+# volumes:
+#   minio_data: 
