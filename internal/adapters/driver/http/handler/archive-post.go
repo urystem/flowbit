@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (h *handler) ArchivePost(w http.ResponseWriter, r *http.Request) {

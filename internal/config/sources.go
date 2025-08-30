@@ -5,13 +5,13 @@ type sources struct {
 	countWorkers uint8
 }
 
-func (c *config) initSources() *sources {
+func (c *config) initSources() sources {
 	count := mustGetEnvInt("count")
 	if count < 1 || count > 255 {
 		// slog.Error("ss")
 		panic("ss")
 	}
-	return &sources{
+	return sources{
 		ports:        mustGetArrayStr("ss"),
 		countWorkers: uint8(count),
 	}
@@ -19,4 +19,8 @@ func (c *config) initSources() *sources {
 
 func (s *sources) GetAddrs() []string {
 	return s.ports
+}
+
+func (src *sources) GetCountWorkers() uint8 {
+	return src.countWorkers
 }

@@ -4,10 +4,9 @@ import (
 	"context"
 	"log/slog"
 
+	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
-
-	"marketflow/internal/domain"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -25,7 +24,7 @@ func InitRickRedis(ctx context.Context, red inbound.RedisConfig) (outbound.Redis
 		Password: red.GetPass(),              // пароль, если есть
 		// DB:       0,                          // номер БД (0 по умолчанию)
 	})
-	return &myRedis{rdb}, rdb.Ping(ctx).Err()
+	return &myRedis{ctx, rdb}, rdb.Ping(ctx).Err()
 }
 
 func (rdb *myRedis) Start(exCh <-chan *domain.Exchange, fallbackCh chan<- *domain.Exchange) {
@@ -36,11 +35,13 @@ func (rdb *myRedis) Start(exCh <-chan *domain.Exchange, fallbackCh chan<- *domai
 			select {
 			case <-rdb.ctx.Done():
 				// Контекст отменён — выходим
+				close(fallbackCh)
 				return
 
 			case ex, ok := <-exCh:
 				if !ok {
 					// Канал закрыт — больше данных не будет
+					close(fallbackCh)
 					return
 				}
 				_, err := rdb.TSAddWithArgs(
@@ -53,10 +54,6 @@ func (rdb *myRedis) Start(exCh <-chan *domain.Exchange, fallbackCh chan<- *domai
 				if err != nil {
 					// Если Redis упал — fallback в Postgres
 					fallbackCh <- ex
-					// select {
-					// case fallbackCh <- ex:
-					// 	log.Printf("redis down, fallback to postgres: %+v", ex)
-					// }
 				}
 			}
 		}
