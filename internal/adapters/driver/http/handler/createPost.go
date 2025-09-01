@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (h *handler) CreatePostPage(w http.ResponseWriter, r *http.Request) {
@@ -19,17 +19,11 @@ func (h *handler) SubmitPost(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 	ctx := r.Context()
-	sess, x := h.middleware.FromContext(ctx)
-	if !x {
-		http.Error(w, "error middleware", http.StatusUnauthorized)
-		return
-	}
 	form := &domain.Form{
 		// Name:    r.FormValue("name"),
 		// Subject: r.FormValue("subject"),
 		// Content: r.FormValue("comment"),
 	}
-	form.Uuid = sess.Uuid
 	form.Name = r.FormValue("name")
 	form.Subject = r.FormValue("subject")
 	form.Content = r.FormValue("content")
@@ -53,13 +47,6 @@ func (h *handler) SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !sess.Saved {
-		err := h.use.AddUserToDB(ctx, sess)
-		if err != nil {
-			slog.Error(err.Error())
-			return
-		}
-	}
 	err = h.use.CreatePost(ctx, form)
 	if err != nil {
 		errData := &domain.ErrorPageData{

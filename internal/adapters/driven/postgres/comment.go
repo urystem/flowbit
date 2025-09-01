@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (db *poolDB) GetComments(ctx context.Context, postID uint64) ([]domain.Comment, error) {

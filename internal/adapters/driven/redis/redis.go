@@ -12,8 +12,6 @@ import (
 )
 
 type myRedis struct {
-	// log
-	// errCh
 	ctx context.Context
 	*redis.Client
 }

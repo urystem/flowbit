@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (h *handler) AddComment(w http.ResponseWriter, r *http.Request) {
@@ -23,14 +23,8 @@ func (h *handler) AddComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	sess, x := h.middleware.FromContext(ctx)
-	if !x {
-		http.Error(w, "error middleware", http.StatusUnauthorized)
-		return
-	}
 	form := &domain.CommentForm{}
 	form.PostID = postID
-	form.User = sess.Uuid
 	form.Content = r.FormValue("comment")
 
 	file, header, err := r.FormFile("file")
@@ -48,14 +42,6 @@ func (h *handler) AddComment(w http.ResponseWriter, r *http.Request) {
 		}
 		h.renderError(w, errData)
 		return
-	}
-
-	if !sess.Saved {
-		err := h.use.AddUserToDB(ctx, sess)
-		if err != nil {
-			slog.Error(err.Error())
-			return
-		}
 	}
 
 	err = h.use.CreateComment(ctx, form)

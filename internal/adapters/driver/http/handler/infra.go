@@ -7,12 +7,11 @@ import (
 )
 
 type handler struct {
-	templates  *template.Template
-	middleware inbound.MiddlewareSessionContext
-	use        inbound.Service
+	templates *template.Template
+	use       inbound.Service
 }
 
-func InitHandler(middleware inbound.MiddlewareSessionContext, use inbound.Service) (inbound.HandlerInter, error) {
+func InitHandler(use inbound.Service) (inbound.HandlerInter, error) {
 	templates, err := template.ParseGlob("web/templates/*.html")
 	if err != nil {
 		return nil, err
@@ -22,5 +21,5 @@ func InitHandler(middleware inbound.MiddlewareSessionContext, use inbound.Servic
 	// for _, t := range templates.Templates() {
 	// 	fmt.Println(t.Name())
 	// }
-	return &handler{templates, middleware, use}, nil
+	return &handler{templates, use}, nil
 }

@@ -1,4 +1,4 @@
-FROM golang:1.24.4-alpine3.22 AS builder
+FROM golang:1.25.0-alpine3.22 AS builder
 
 WORKDIR /app
 
@@ -12,6 +12,5 @@ FROM alpine
 WORKDIR /app
 
 COPY --from=builder /app/marketflow .
-COPY --from=builder /app/web ./web
 
 ENTRYPOINT [ "./marketflow" ]

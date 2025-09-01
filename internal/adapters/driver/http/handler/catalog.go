@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (h *handler) Catalog(w http.ResponseWriter, r *http.Request) {

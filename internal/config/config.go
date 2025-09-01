@@ -8,14 +8,14 @@ type config struct {
 	db dbConfig
 
 	redis redisConfig
-	src   sources
+	src   hosts
 }
 
 func Load() inbound.Config {
 	conf := &config{}
-	conf.server = conf.initServerCfg()
-	conf.db = conf.initDBConfig()
-	conf.redis = conf.initRedisConf()
+	// conf.server = conf.initServerCfg()
+	// conf.db = conf.initDBConfig()
+	// conf.redis = conf.initRedisConf()
 	conf.src = conf.initSources()
 
 	return conf

@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"1337b04rd/internal/ports/inbound"
+	"marketflow/internal/ports/inbound"
 )
 
 // type router struct {
@@ -11,7 +11,7 @@ import (
 // 	handler    inbound.HandlerInter
 // }
 
-func NewRoute(middle inbound.MiddleWareInter, hand inbound.HandlerInter) http.Handler {
+func NewRoute(hand inbound.HandlerInter) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", hand.Catalog)
 	// mux.Handle("GET /", middle.CheckOrSetSession(http.HandlerFunc(hand.Catalog)))
@@ -25,6 +25,6 @@ func NewRoute(middle inbound.MiddleWareInter, hand inbound.HandlerInter) http.Ha
 	mux.HandleFunc("POST /add-comment/{postID}", hand.AddComment)
 	mux.HandleFunc("POST /reply/{commentID}", hand.Reply)
 
-	return middle.CheckOrSetSession(mux)
+	return mux
 	// return mux
 }

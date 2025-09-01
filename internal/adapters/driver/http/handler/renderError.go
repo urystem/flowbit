@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"text/template"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (h *handler) renderError(w http.ResponseWriter, errPage *domain.ErrorPageData) {

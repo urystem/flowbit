@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (db *poolDB) SelectActivePosts(ctx context.Context) ([]domain.PostNonContent, error) {
@@ -108,13 +108,13 @@ func (db *poolDB) GetPost(ctx context.Context, id uint64) (*domain.PostX, error)
             posts
         WHERE 
             post_id = $1`
-	
+
 	postX := new(domain.PostX)
-	
+
 	err := db.QueryRow(ctx, query, id).Scan(&postX.Title, &postX.Content, &postX.HasImage)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return postX, nil
 }

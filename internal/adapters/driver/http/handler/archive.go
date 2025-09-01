@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 func (h *handler) Archive(w http.ResponseWriter, r *http.Request) {
@@ -31,4 +31,3 @@ func (h *handler) Archive(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, errData)
 	}
 }
-

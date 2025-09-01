@@ -2,19 +2,18 @@ package bootstrap
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
-	"marketflow/internal/adapters/driver/http/router"
-	"marketflow/internal/adapters/driver/http/server"
+	"marketflow/internal/adapters/driver/exchange"
 	"marketflow/internal/ports/inbound"
-
-	"marketflow/internal/adapters/driver/http/handler"
 )
 
 // DI container
 type myApp struct {
+	src    inbound.SourceInter
 	ticker inbound.Ticker
 	srv    inbound.ServerInter
 	wg     sync.WaitGroup
@@ -22,28 +21,19 @@ type myApp struct {
 
 func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) {
 	// init server
-	srvCfg := cfg.GetServerCfg()
-	mySrv := server.InitServer(srvCfg)
+	// srvCfg := cfg.GetServerCfg()
+	// mySrv := server.InitServer(srvCfg)
 
 	// init app
-	app := &myApp{srv: mySrv}
+	app := &myApp{}
 
-	rdbCfg := cfg.GetRedisConfig()
-	rdb, err := app.initRedis(ctx, rdbCfg)
-	if err != nil {
-		return nil, errors.Join(err, app.Shutdown(ctx))
-	}
-	rdb.SetExchange()
-
-	handler, err := handler.InitHandler(middle, useCase)
-	if err != nil {
-		return nil, errors.Join(err, app.Shutdown(ctx))
-	}
-
-	// init router
-	router := router.NewRoute(middle, handler)
-
-	app.srv.SetHandler(router)
+	// rdbCfg := cfg.GetRedisConfig()
+	// rdb, err := app.initRedis(ctx, rdbCfg)
+	// if err != nil {
+	// 	return nil, errors.Join(err, app.Shutdown(ctx))
+	// }
+	source := exchange.InitSource(ctx, cfg.GetSourcesCfg())
+	app.src = source
 	return app, nil
 }
 
@@ -57,6 +47,15 @@ func (app *myApp) Shutdown(ctx context.Context) error {
 
 func (app *myApp) Run() error {
 	slog.Info("server starting")
-	app.initTicker()
-	return app.srv.ListenServe()
+	ch, err := app.src.Start()
+	if err != nil {
+		return err
+	}
+	for {
+		fmt.Println(<-ch)
+	}
+	// app.initTicker()
+	time.Sleep(10 * time.Minute)
+	return nil
+	// return app.srv.ListenServe()
 }

@@ -19,8 +19,10 @@ type RedisConfig interface {
 }
 
 type SourcesCfg interface {
-	GetCountWorkers() uint8
-	GetAddrs() []string
+	GetPort(host string) uint16
+	GetCountWorkers(hostKey string) uint8
+	GetHosts() []string
+	GetCountOfAllWorkers() uint16
 }
 
 type Config interface {

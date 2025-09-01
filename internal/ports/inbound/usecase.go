@@ -3,7 +3,7 @@ package inbound
 import (
 	"context"
 
-	"1337b04rd/internal/domain"
+	"marketflow/internal/domain"
 )
 
 type UseCase interface {
