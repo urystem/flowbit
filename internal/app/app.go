@@ -13,9 +13,9 @@ import (
 
 // DI container
 type myApp struct {
-	src    inbound.SourceInter
-	ticker inbound.Ticker
-	srv    inbound.ServerInter
+	src    inbound.SourceInter // for init
+	ticker inbound.Ticker      // for run
+	srv    inbound.ServerInter // for init and for run
 	wg     sync.WaitGroup
 }
 

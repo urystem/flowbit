@@ -1,12 +1,12 @@
 package inbound
 
 type ServerCfg interface {
-	GetPort() int
+	GetPort() uint16
 }
 
 type DBConfig interface {
 	GetHostName() string
-	GetPort() int
+	GetPort() uint16
 	GetUser() string
 	GetPassword() string
 	GetDBName() string
@@ -19,10 +19,10 @@ type RedisConfig interface {
 }
 
 type SourcesCfg interface {
-	GetPort(host string) uint16
-	GetCountWorkers(hostKey string) uint8
+	// GetPort(host string) uint16
+	GetCountWorkers() uint8
 	GetHosts() []string
-	GetCountOfAllWorkers() uint16
+	// GetCountOfAllWorkers() uint16
 }
 
 type Config interface {

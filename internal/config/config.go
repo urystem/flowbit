@@ -8,7 +8,7 @@ type config struct {
 	db dbConfig
 
 	redis redisConfig
-	src   hosts
+	src   sources
 }
 
 func Load() inbound.Config {

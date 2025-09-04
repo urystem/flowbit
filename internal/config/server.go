@@ -1,15 +1,17 @@
 package config
 
+import "math"
+
 type serverCfg struct {
-	port int
+	port uint16
 }
 
 func (c *config) initServerCfg() serverCfg {
-	cfg := serverCfg{}
-	cfg.port = mustGetEnvInt("SERVER_PORT")
-	return cfg
+	portTemp := mustGetEnvInt("SERVER_PORT")
+	if portTemp < 0 || math.MaxUint16 < portTemp {
+		panic("")
+	}
+	return serverCfg{port: uint16(portTemp)}
 }
 
-func (scfg *serverCfg) GetPort() int {
-	return scfg.port
-}
+func (scfg *serverCfg) GetPort() uint16 { return scfg.port }

@@ -1,8 +1,10 @@
 package config
 
+import "math"
+
 type dbConfig struct {
 	host     string
-	port     int
+	port     uint16
 	user     string
 	password string
 	name     string
@@ -12,7 +14,10 @@ type dbConfig struct {
 func (c *config) initDBConfig() dbConfig {
 	dbConf := dbConfig{}
 	dbConf.host = mustGetEnvString("DB_HOST")
-	dbConf.port = mustGetEnvInt("DB_PORT")
+	temPort := mustGetEnvInt("DB_PORT")
+	if temPort < 0 || math.MaxUint16 < temPort {
+		panic("")
+	}
 	dbConf.user = mustGetEnvString("DB_USER")
 	dbConf.password = mustGetEnvString("DB_PASSWORD")
 	dbConf.name = mustGetEnvString("DB_NAME")
@@ -24,7 +29,7 @@ func (dbC *dbConfig) GetHostName() string {
 	return dbC.host
 }
 
-func (dbC *dbConfig) GetPort() int {
+func (dbC *dbConfig) GetPort() uint16 {
 	return dbC.port
 }
 
