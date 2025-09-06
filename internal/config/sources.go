@@ -3,16 +3,17 @@ package config
 import (
 	"strconv"
 	"strings"
+	"time"
 )
 
 type sources struct {
 	address      []string
-	countWorkers uint8
+	countWorkers time.Duration
 }
 
 func (c *config) initSources() sources {
-	count := mustGetEnvInt("MARKET_DEFAULT_WORKERS")
-	if count < 1 || count > 255 {
+	second := mustGetEnvInt("MARKET_INTERVAL")
+	if second < 1 || second > 60 {
 		// slog.Error("ss")
 		panic("ss")
 	}
@@ -37,7 +38,7 @@ func (c *config) initSources() sources {
 		}
 		checkHost[hostStr] = struct{}{}
 		checkPort[uint16(port)] = struct{}{}
-		addrSlc[i] = hostStr + portStr
+		addrSlc[i] = hostStr + ":" + portStr
 	}
 
 	if lenAddr != len(checkHost) {
@@ -47,10 +48,10 @@ func (c *config) initSources() sources {
 	}
 	return sources{
 		address:      addrSlc,
-		countWorkers: uint8(count),
+		countWorkers: time.Duration(second) * time.Second,
 	}
 }
 
-func (s *sources) GetHosts() []string { return s.address }
+func (s *sources) GetAddresses() []string { return s.address }
 
-func (s *sources) GetCountWorkers() uint8 { return s.countWorkers }
+func (s *sources) GetInterval() time.Duration { return s.countWorkers }

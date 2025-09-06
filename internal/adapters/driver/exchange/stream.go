@@ -8,15 +8,16 @@ import (
 	"sync"
 
 	"marketflow/internal/domain"
+	"marketflow/internal/ports/inbound"
 )
 
 type stream struct {
-	con  net.Conn
-	used bool
-	mu   sync.Mutex
+	con   net.Conn
+	using bool
+	mu    sync.Mutex
 }
 
-func InitStream(addr string) (any, error) {
+func InitStream(addr string) (inbound.StreamAdapterInter, error) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
@@ -32,10 +33,10 @@ func (s *stream) CloseStream() error {
 
 func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error) {
 	s.mu.Lock()
-	if s.used {
-		return nil, fmt.Errorf("%w", "already working")
+	if s.using {
+		return nil, fmt.Errorf("%s", "already working")
 	}
-	s.used = true
+	s.using = true
 	s.mu.Unlock()
 	outCh := make(chan *domain.Exchange)
 	go func() {
@@ -46,7 +47,7 @@ func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error)
 			case <-ctx.Done():
 				ctx.Err()
 				s.mu.Lock()
-				s.used = false
+				s.using = false
 				s.mu.Unlock()
 				return
 			default:
@@ -61,62 +62,3 @@ func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error)
 	}()
 	return outCh, nil
 }
-
-// 	dec := json.NewDecoder(conn)
-
-// 	for {
-// 		select {
-// 		case <-ctx.Done():
-// 			conn.Close()
-// 			return nil, nil
-// 		default:
-// 			ex := new(domain.Exchange)
-// 			if err = dec.Decode(ex); err != nil {
-// 				//
-// 				fmt.Println(err)
-// 				break
-// 			}
-// 			outCh <- ex
-// 		}
-// 	}
-// 	conn.Close()
-// }
-
-// func (m *market) subscribe(ex *exchange) {
-// 	defer m.wg.Done()
-// 	for {
-// 		select {
-// 		case <-m.ctx.Done():
-// 			return
-// 		default:
-// 			conn, err := net.Dial("tcp", net.JoinHostPort(ex.host, fmt.Sprintf("%d", ex.port)))
-// 			if err != nil {
-// 				log.Fatal("dial error:", err)
-// 				continue
-// 			}
-// 			dec := json.NewDecoder(conn)
-// 			for {
-// 				ex := new(domain.Exchange)
-// 				if err = dec.Decode(ex); err != nil {
-// 					//
-// 					fmt.Println(err)
-// 					break
-// 				}
-// 				m.outCh <- ex
-// 			}
-
-// 			conn.Close()
-// 		}
-// 	}
-// }
-
-// func (e *exchange) worker(dec *json.Decoder, out chan<- *domain.Exchange) {
-// 	defer e.wg.Done()
-// 	for {
-// 		ex := new(domain.Exchange)
-// 		if err := dec.Decode(ex); err != nil {
-// 			return
-// 		}
-// 		out <- ex
-// 	}
-// }

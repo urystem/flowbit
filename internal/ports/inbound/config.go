@@ -1,5 +1,7 @@
 package inbound
 
+import "time"
+
 type ServerCfg interface {
 	GetPort() uint16
 }
@@ -20,8 +22,9 @@ type RedisConfig interface {
 
 type SourcesCfg interface {
 	// GetPort(host string) uint16
-	GetCountWorkers() uint8
-	GetHosts() []string
+	// GetCountWorkers() uint8
+	GetInterval() time.Duration
+	GetAddresses() []string
 	// GetCountOfAllWorkers() uint16
 }
 
