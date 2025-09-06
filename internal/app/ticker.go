@@ -1,4 +1,4 @@
-package bootstrap
+package app
 
 // func (app *myApp) initTicker() {
 // 	app.wg.Add(2)

@@ -3,7 +3,7 @@ services:
       build: .
       ports:
       - ${HOST_PORT:-8080}:${SERVER_PORT:-8080}
-      container_name: leetboard-app
+      container_name: marketflow
       env_file:
         - .env
     exchange1:
