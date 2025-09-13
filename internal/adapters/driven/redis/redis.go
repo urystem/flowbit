@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"log/slog"
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
@@ -12,7 +11,7 @@ import (
 )
 
 type myRedis struct {
-	ctx context.Context
+	// ctx context.Context
 	*redis.Client
 }
 
@@ -22,40 +21,23 @@ func InitRickRedis(ctx context.Context, red inbound.RedisConfig) (outbound.Redis
 		Password: red.GetPass(),              // пароль, если есть
 		// DB:       0,                          // номер БД (0 по умолчанию)
 	})
-	return &myRedis{ctx, rdb}, rdb.Ping(ctx).Err()
+	return &myRedis{rdb}, rdb.Ping(ctx).Err()
 }
 
-func (rdb *myRedis) Start(exCh <-chan *domain.Exchange, fallbackCh chan<- *domain.Exchange) {
-	go func() {
-		defer slog.Info("redis stopped")
-
-		for {
-			select {
-			case <-rdb.ctx.Done():
-				// Контекст отменён — выходим
-				close(fallbackCh)
-				return
-
-			case ex, ok := <-exCh:
-				if !ok {
-					// Канал закрыт — больше данных не будет
-					close(fallbackCh)
-					return
-				}
-				_, err := rdb.TSAddWithArgs(
-					rdb.ctx,
-					ex.Symbol,
-					ex.Timestamp,
-					ex.Price,
-					&redis.TSOptions{},
-				).Result()
-				if err != nil {
-					// Если Redis упал — fallback в Postgres
-					fallbackCh <- ex
-				}
-			}
-		}
-	}()
+func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
+	_, err := rdb.TSAddWithArgs(
+		ctx,
+		ex.Symbol,    // tenge
+		ex.Timestamp, // time
+		ex.Price,     // price
+		&redis.TSOptions{
+			Retention: 70000, // 70 SEC
+			Labels: map[string]string{
+				"exchange": ex.Source,
+			},
+		}, // need to exchange
+	).Result()
+	return err
 }
 
 func (rdb *myRedis) CloseRedis() error {

@@ -1,15 +1,17 @@
 package outbound
 
 import (
+	"context"
+
 	"marketflow/internal/domain"
 )
 
-type RedisInterLocal interface {
-	Start(exCh <-chan *domain.Exchange, fallbackCh chan<- *domain.Exchange)
+type RedisInterForWorkers interface {
+	Add(ctx context.Context, ex *domain.Exchange) error
 }
 
 type RedisInterGlogal interface {
 	// GetAndDelRandomCharacter(ctx context.Context) (*domain.Character, error)
-	RedisInterLocal
+	RedisInterForWorkers
 	CloseRedis() error
 }

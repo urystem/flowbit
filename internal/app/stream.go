@@ -15,13 +15,14 @@ import (
 
 func (app *myApp) initStream(cfg inbound.SourcesCfg) (inbound.StreamAppInter, error) {
 	strm := &streams{
-		outCh:    make(chan *domain.Exchange),
+		outCh:    make(chan *domain.Exchange, 123),
 		start:    make(chan struct{}),
 		interval: cfg.GetInterval(),
 	}
 
 	for i, addr := range cfg.GetAddresses() {
 		strm.wg.Add(1)
+		// бул жерде sunc.Waitgroup.Go функция болмайды ол тек func() кабылдайды
 		go strm.startStream(i, addr)
 	}
 
@@ -46,7 +47,6 @@ func (s *streams) startStream(i int, addr string) {
 			s.checkErr(err)
 			continue
 		}
-
 		<-s.start
 		ch, err := strm.Subscribe(s.ctx)
 		if err != nil {
@@ -54,7 +54,7 @@ func (s *streams) startStream(i int, addr string) {
 			strm.CloseStream()
 			continue
 		}
-		s.mergeCh(ch)
+		s.mergeCh(ch) // after closing channel
 		s.checkErr(s.ctx.Err())
 		strm.CloseStream()
 	}
