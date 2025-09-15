@@ -15,6 +15,8 @@ type myApp struct {
 	ctxCancelCause context.CancelCauseFunc
 	strm           inbound.StreamAppInter // for init //adapter
 	red            outbound.RedisInterGlogal
+	workCfg        inbound.WorkerCfg
+
 	// ticker inbound.Ticker         // for run
 	srv inbound.ServerInter // for init and for run
 	// wg  sync.WaitGroup
@@ -35,6 +37,7 @@ func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) 
 		return nil, err
 	}
 	app.red = myRed
+	app.workCfg = cfg.GetWorkerCfg()
 	return app, nil
 }
 
@@ -47,10 +50,10 @@ func (app *myApp) Shutdown(ctx context.Context) error {
 
 func (app *myApp) Run() error {
 	slog.Info("server starting")
-	ch := app.strm.Start(app.ctx)
-	for {
-		fmt.Println(<-ch)
-	}
+	uCh := app.strm.Start(app.ctx)
+
+	worker := app.initWorkers(app.workCfg, app.red, uCh)
+	worker.Start(app.ctx)
 	// app.initTicker()
 	// time.Sleep(10 * time.Minute)
 	return nil

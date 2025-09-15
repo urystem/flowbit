@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"marketflow/internal/ports/inbound"
-	"marketflow/internal/ports/outbound"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,7 +14,7 @@ type poolDB struct {
 	*pgxpool.Pool
 }
 
-func InitDB(ctx context.Context, cfg inbound.DBConfig) (outbound.PostGres, error) {
+func InitDB(ctx context.Context, cfg inbound.DBConfig) (any, error) {
 	dsn := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.GetUser(),
@@ -35,4 +34,3 @@ func InitDB(ctx context.Context, cfg inbound.DBConfig) (outbound.PostGres, error
 func (pool *poolDB) CloseDB() {
 	pool.Close()
 }
-

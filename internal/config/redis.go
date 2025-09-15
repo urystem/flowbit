@@ -12,10 +12,6 @@ func (c *config) initRedisConf() redisConfig {
 	return conf
 }
 
-func (r *redisConfig) GetAddr() string {
-	return r.port
-}
+func (r *redisConfig) GetAddr() string { return r.port }
 
-func (r *redisConfig) GetPass() string {
-	return r.pass
-}
+func (r *redisConfig) GetPass() string { return r.pass }

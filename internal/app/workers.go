@@ -7,41 +7,48 @@ import (
 	"time"
 
 	"marketflow/internal/domain"
+	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 )
 
 type workerControl struct {
 	ctx            context.Context
+	cancelFuncC    context.CancelCauseFunc
 	wg             sync.WaitGroup
 	workers        []*worker
 	maxOrDefWorker int
+	interval       time.Duration
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
 	ex             <-chan *domain.Exchange
 }
 
-func (app *myApp) initWorkers(ctx context.Context, maxWorkers int, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange) any {
+type WorkerInter interface {
+	Start(ctx context.Context)
+}
+
+func (app *myApp) initWorkers(cfg inbound.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange) WorkerInter {
 	return &workerControl{
-		ctx:            ctx,
-		maxOrDefWorker: maxWorkers,
+		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
+		elastic:        cfg.GetBoolElasticWorker(),
 		rdb:            rdb,
 		ex:             ex,
+		interval:       cfg.GetElasticInterval(),
 	}
 }
 
-func (wc *workerControl) start() {
+func (wc *workerControl) Start(ctx context.Context) {
+	wc.ctx, wc.cancelFuncC = context.WithCancelCause(ctx)
+	for range wc.maxOrDefWorker {
+		wc.addWorker()
+	}
 	if wc.elastic {
-		wc.addWorker() // add 1 worker
-		wc.elasTicker()
-	} else {
-		for range wc.maxOrDefWorker {
-			wc.addWorker()
-		}
+		go wc.elasTicker()
 	}
 }
 
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.ex, &wc.wg)
+	w := wc.initWorker(wc.rdb, wc.ex, &wc.wg)
 	wc.workers = append(wc.workers, w)
 	w.Start()
 }
@@ -53,19 +60,32 @@ func (wc *workerControl) removeWorker() {
 }
 
 func (wc *workerControl) elasTicker() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(wc.interval)
 	defer ticker.Stop()
-	for range ticker.C {
-		kanallen := len(wc.ex)
-		wlen := len(wc.workers)
-		if kanallen == 0 { // for panic
-			continue
-		} else if qatynas := float32(wlen) / float32(kanallen); qatynas < 1.1 {
-			wc.addWorker()
-			fmt.Println("⚡ Added worker, total:", len(wc.workers))
-		} else if qatynas > 1.5 {
-			wc.removeWorker()
-			fmt.Println("💤 Removed worker, total:", len(wc.workers))
+	for {
+		select {
+		case <-wc.ctx.Done():
+			return
+		case <-ticker.C:
+			kanallen := len(wc.ex)
+			wlen := len(wc.workers)
+			if kanallen == 0 { // for panic
+				continue
+			} else if qatynas := float32(wlen) / float32(kanallen); qatynas < 1.1 && wlen < int(wc.maxOrDefWorker) {
+				wc.addWorker()
+				fmt.Println("⚡ Added worker, total:", len(wc.workers))
+			} else if qatynas > 1.5 {
+				wc.removeWorker()
+				fmt.Println("💤 Removed worker, total:", len(wc.workers))
+			}
 		}
 	}
+}
+
+func (wc *workerControl) cleanAll() { // STOP
+	wc.cancelFuncC(fmt.Errorf("stop worker"))
+	for _, w := range wc.workers {
+		go w.Stop()
+	}
+	wc.wg.Wait()
 }

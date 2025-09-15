@@ -7,8 +7,8 @@ import (
 )
 
 type sources struct {
-	address      []string
-	countWorkers time.Duration
+	address []string
+	interv  time.Duration
 }
 
 func (c *config) initSources() sources {
@@ -47,11 +47,11 @@ func (c *config) initSources() sources {
 		panic("duplicated port")
 	}
 	return sources{
-		address:      addrSlc,
-		countWorkers: time.Duration(second) * time.Second,
+		address: addrSlc,
+		interv:  time.Duration(second) * time.Second,
 	}
 }
 
 func (s *sources) GetAddresses() []string { return s.address }
 
-func (s *sources) GetInterval() time.Duration { return s.countWorkers }
+func (s *sources) GetInterval() time.Duration { return s.interv }

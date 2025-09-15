@@ -25,26 +25,14 @@ func (c *config) initDBConfig() dbConfig {
 	return dbConf
 }
 
-func (dbC *dbConfig) GetHostName() string {
-	return dbC.host
-}
+func (dbC *dbConfig) GetHostName() string { return dbC.host }
 
-func (dbC *dbConfig) GetPort() uint16 {
-	return dbC.port
-}
+func (dbC *dbConfig) GetPort() uint16 { return dbC.port }
 
-func (dbC *dbConfig) GetUser() string {
-	return dbC.user
-}
+func (dbC *dbConfig) GetUser() string { return dbC.user }
 
-func (dbC *dbConfig) GetPassword() string {
-	return dbC.password
-}
+func (dbC *dbConfig) GetPassword() string { return dbC.password }
 
-func (dbC *dbConfig) GetDBName() string {
-	return dbC.name
-}
+func (dbC *dbConfig) GetDBName() string { return dbC.name }
 
-func (dbC *dbConfig) GetSSLMode() string {
-	return dbC.sslMode
-}
+func (dbC *dbConfig) GetSSLMode() string { return dbC.sslMode }

@@ -17,8 +17,9 @@ type worker struct {
 	quit chan struct{}
 }
 
-func (app *workerControl) initWorker(jobs <-chan *domain.Exchange, wg *sync.WaitGroup) *worker {
+func (app *workerControl) initWorker(rdb outbound.RedisInterForWorkers, jobs <-chan *domain.Exchange, wg *sync.WaitGroup) *worker {
 	return &worker{
+		rdb:  rdb,
 		jobs: jobs,
 		quit: make(chan struct{}),
 		wg:   wg,
@@ -41,7 +42,7 @@ func (w *worker) myFn() {
 			}
 			err := w.rdb.Add(context.TODO(), ex)
 			if err != nil {
-				slog.Error("go psql")
+				slog.Error(err.Error())
 			}
 		}
 	}

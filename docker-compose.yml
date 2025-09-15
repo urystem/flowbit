@@ -42,18 +42,19 @@ services:
     #       # condition: service_started
     #     db:
     #       condition: service_healthy
-    # redisDB:
-    #   image: redis
-    #   # image: redis:alpine
-    #   container_name: leetboard-redis
-    #   ports:
-    #   - "${REDIS_PORT:-6379}:6379"
-    #   command: sh -c "redis-server --requirepass \"$REDIS_PASS\"" # to set password
-    #   healthcheck:
-    #     test: ["CMD", "redis-cli", "ping"]
-    #     interval: 3s
-    #     timeout: 3s
-    #     retries: 5
+    redisDB:
+      image: redis
+      container_name: marketflow-redis
+      # sysctls:
+      # - vm.overcommit_memory=1
+      ports:
+      - "${REDIS_PORT:-6379}:6379"
+      command: sh -c "redis-server --requirepass \"$REDIS_PASS\"" # to set password
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 3s
+        timeout: 3s
+        retries: 5
     # db:
     #   image: postgres:alpine
     #   container_name: leetboard_db

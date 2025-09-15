@@ -28,9 +28,16 @@ type SourcesCfg interface {
 	// GetCountOfAllWorkers() uint16
 }
 
+type WorkerCfg interface {
+	GetBoolElasticWorker() bool
+	GetCountOfMaxOrDefWorker() int
+	GetElasticInterval() time.Duration
+}
+
 type Config interface {
 	GetServerCfg() ServerCfg
 	GetDBConfig() DBConfig
 	GetRedisConfig() RedisConfig
 	GetSourcesCfg() SourcesCfg
+	GetWorkerCfg() WorkerCfg
 }

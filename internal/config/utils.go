@@ -10,7 +10,7 @@ import (
 func mustGetEnvString(key string) string {
 	str := os.Getenv(key)
 	if str == "" {
-		log.Fatalln(key, "not seted")
+		log.Fatalln(key, "not found in env")
 	}
 	return str
 }
