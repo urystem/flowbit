@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 
 	"marketflow/internal/domain"
@@ -12,9 +13,10 @@ import (
 )
 
 type stream struct {
-	con   net.Conn
-	using bool
-	mu    sync.Mutex
+	exName string
+	con    net.Conn
+	using  bool
+	mu     sync.Mutex
 }
 
 func InitStream(addr string) (inbound.StreamAdapterInter, error) {
@@ -23,8 +25,11 @@ func InitStream(addr string) (inbound.StreamAdapterInter, error) {
 		return nil, err
 	}
 	// conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "example.com:1234")
-
-	return &stream{con: conn}, nil
+	before, _, _ := strings.Cut(addr, ":")
+	return &stream{
+		exName: before,
+		con:    conn,
+	}, nil
 }
 
 func (s *stream) CloseStream() error {
@@ -56,6 +61,7 @@ func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error)
 					fmt.Println(err)
 					return
 				}
+				ex.Source = s.exName
 				outCh <- ex
 			}
 		}

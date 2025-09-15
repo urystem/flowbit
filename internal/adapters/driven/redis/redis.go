@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"fmt"
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
@@ -27,16 +28,17 @@ func InitRickRedis(ctx context.Context, red inbound.RedisConfig) (outbound.Redis
 func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
 	_, err := rdb.TSAddWithArgs(
 		ctx,
-		ex.Symbol,    // tenge
-		ex.Timestamp, // time
-		ex.Price,     // price
+		ex.Source+":"+ex.Symbol, // tenge
+		ex.Timestamp,            // time
+		ex.Price,                // price
 		&redis.TSOptions{
 			Retention: 70000, // 70 SEC
-			Labels: map[string]string{
-				"exchange": ex.Source,
-			},
+			// DuplicatePolicy: "LAST",
 		}, // need to exchange
 	).Result()
+	if err == nil {
+		fmt.Println("ok")
+	}
 	return err
 }
 
