@@ -43,13 +43,13 @@ services:
     #     db:
     #       condition: service_healthy
     redisDB:
-      image: redis
+      image: redis:latest
       container_name: marketflow-redis
       # sysctls:
       # - vm.overcommit_memory=1
       ports:
       - "${REDIS_PORT:-6379}:6379"
-      command: sh -c "redis-server --requirepass \"$REDIS_PASS\"" # to set password
+      command: ["redis-server", "--requirepass", "${REDIS_PASS}"]
       healthcheck:
         test: ["CMD", "redis-cli", "ping"]
         interval: 3s

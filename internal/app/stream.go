@@ -38,7 +38,7 @@ type streams struct {
 	start       chan struct{}
 }
 
-func (s *streams) startStream(i int, addr string) {
+func (s *streams) startStream(i int, exName, addr string) {
 	defer s.wg.Done()
 	for {
 		strm, err := exchange.InitStream(addr)
