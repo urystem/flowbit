@@ -2,6 +2,8 @@ package redis
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
@@ -33,6 +35,10 @@ func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
 		&redis.TSOptions{
 			Retention: 70000, // 70 SEC
 			// DuplicatePolicy: "LAST",
+			Labels: map[string]string{
+				"exchange": ex.Source,
+				"symbol":   ex.Symbol,
+			},
 		}, // need to exchange
 	).Result()
 	return err
@@ -40,4 +46,21 @@ func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
 
 func (rdb *myRedis) CloseRedis() error {
 	return rdb.Close()
+}
+
+func (rdb *myRedis) Get(ctx context.Context, keys ...string) ([]domain.Exchange, error) {
+	now := time.Now().UnixMilli()
+	fmt.Println(now)
+	res, err := rdb.TSMRange(
+		ctx,
+		int(now-60_000),
+		int(now),
+		keys,
+	).Result()
+	fmt.Println(err)
+	var exchanges []domain.Exchange
+	for exSym, serie := range res {
+		fmt.Println(exSym, serie, "ddddddddd")
+	}
+	return exchanges, nil
 }

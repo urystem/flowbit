@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
@@ -60,9 +61,11 @@ func (app *myApp) Run() error {
 
 	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
 	app.workers.Start(app.ctx)
+	time.Sleep(4 * time.Second)
+	app.red.Get(app.ctx, "exchange1:BTCUSDT")
+
 	// app.initTicker()
 	// time.Sleep(10 * time.Minute)
 	return nil
 	// return app.srv.ListenServe()
 }
-
