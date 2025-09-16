@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"fmt"
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
@@ -36,9 +35,6 @@ func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
 			// DuplicatePolicy: "LAST",
 		}, // need to exchange
 	).Result()
-	if err == nil {
-		fmt.Println("ok")
-	}
 	return err
 }
 

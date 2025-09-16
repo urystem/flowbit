@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -25,6 +26,7 @@ type workerControl struct {
 
 type WorkerInter interface {
 	Start(ctx context.Context)
+	CleanAll()
 }
 
 func (app *myApp) initWorkers(cfg inbound.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange) WorkerInter {
@@ -50,13 +52,15 @@ func (wc *workerControl) Start(ctx context.Context) {
 func (wc *workerControl) addWorker() {
 	w := wc.initWorker(wc.rdb, wc.ex, &wc.wg)
 	wc.workers = append(wc.workers, w)
-	w.Start()
+	w.Start(len(wc.workers))
+	slog.Info("⚡ Added worker", "total:", len(wc.workers))
 }
 
 func (wc *workerControl) removeWorker() {
 	w := wc.workers[len(wc.workers)-1]
 	w.Stop()
 	wc.workers = wc.workers[:len(wc.workers)-1]
+	slog.Info("💤 Removed worker", "total:", len(wc.workers))
 }
 
 func (wc *workerControl) elasTicker() {
@@ -69,21 +73,22 @@ func (wc *workerControl) elasTicker() {
 		case <-ticker.C:
 			kanallen := len(wc.ex)
 			wlen := len(wc.workers)
-			if kanallen == 0 { // for panic
-				continue
+			if kanallen == 0 && wlen > 1 { // for panic
+				wc.removeWorker()
 			} else if qatynas := float32(wlen) / float32(kanallen); qatynas < 1.1 && wlen < int(wc.maxOrDefWorker) {
 				wc.addWorker()
-				fmt.Println("⚡ Added worker, total:", len(wc.workers))
 			} else if qatynas > 1.5 {
 				wc.removeWorker()
-				fmt.Println("💤 Removed worker, total:", len(wc.workers))
 			}
 		}
 	}
 }
 
-func (wc *workerControl) cleanAll() { // STOP
+func (wc *workerControl) CleanAll() { // STOP
 	wc.cancelFuncC(fmt.Errorf("stop worker"))
+	// for range wc.workers {
+	// 	wc.removeWorker()
+	// }
 	for _, w := range wc.workers {
 		go w.Stop()
 	}

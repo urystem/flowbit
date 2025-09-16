@@ -16,6 +16,7 @@ type myApp struct {
 	strm           inbound.StreamAppInter // for init //adapter
 	red            outbound.RedisInterGlogal
 	workCfg        inbound.WorkerCfg
+	workers        WorkerInter
 
 	// ticker inbound.Ticker         // for run
 	srv inbound.ServerInter // for init and for run
@@ -43,8 +44,13 @@ func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) 
 
 func (app *myApp) Shutdown(ctx context.Context) error {
 	app.ctxCancelCause(fmt.Errorf("%s", "stopping"))
+	slog.Info("start shutdown")
 	app.strm.Stop()
+	slog.Info("stream")
+	app.workers.CleanAll()
+	slog.Info("workers")
 	app.red.CloseRedis()
+	slog.Info("redis")
 	return nil
 }
 
@@ -52,10 +58,11 @@ func (app *myApp) Run() error {
 	slog.Info("server starting")
 	uCh := app.strm.Start(app.ctx)
 
-	worker := app.initWorkers(app.workCfg, app.red, uCh)
-	worker.Start(app.ctx)
+	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
+	app.workers.Start(app.ctx)
 	// app.initTicker()
 	// time.Sleep(10 * time.Minute)
 	return nil
 	// return app.srv.ListenServe()
 }
+

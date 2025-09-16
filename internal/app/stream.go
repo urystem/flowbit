@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -20,62 +18,59 @@ func (app *myApp) initStream(cfg inbound.SourcesCfg) (inbound.StreamAppInter, er
 		interval: cfg.GetInterval(),
 	}
 
-	for i, addr := range cfg.GetAddresses() {
+	for _, addr := range cfg.GetAddresses() {
 		strm.wg.Add(1)
 		// бул жерде sunc.Waitgroup.Go функция болмайды ол тек func() кабылдайды
-		go strm.startStream(i, addr)
+		go strm.startStream(addr)
 	}
 
 	return strm, nil
 }
 
 type streams struct {
-	wg          sync.WaitGroup        // 3
-	outCh       chan *domain.Exchange // all
-	ctx         context.Context       // for all 3 exchanes
-	cancelCause context.CancelCauseFunc
-	interval    time.Duration
-	start       chan struct{}
+	wg       sync.WaitGroup        // 3
+	outCh    chan *domain.Exchange // all
+	ctx      context.Context       // for all 3 exchanes
+	cancel   context.CancelFunc
+	interval time.Duration
+	start    chan struct{}
 }
 
-func (s *streams) startStream(i int, addr string) {
+func (s *streams) startStream(addr string) {
 	defer s.wg.Done()
 	for {
 		strm, err := exchange.InitStream(addr)
 		if err != nil {
-			slog.Error(err.Error())
-			s.checkErr(err)
+			slog.Error("stream", "reconnecting", err)
+			time.Sleep(s.interval)
 			continue
 		}
 		<-s.start
 		ch, err := strm.Subscribe(s.ctx)
 		if err != nil {
-			s.checkErr(err)
 			strm.CloseStream()
+			slog.Error("stream", "reconnecting", err)
+			time.Sleep(s.interval)
 			continue
 		}
 		s.mergeCh(ch) // after closing channel
-		s.checkErr(s.ctx.Err())
 		strm.CloseStream()
+		if s.ctx.Err() != nil {
+			break
+		}
 	}
+	slog.Info("stream", "stopped", addr)
 }
 
 func (s *streams) Start(ctx context.Context) <-chan *domain.Exchange {
-	s.ctx, s.cancelCause = context.WithCancelCause(ctx)
+	s.ctx, s.cancel = context.WithCancel(ctx)
 	close(s.start)
 	return s.outCh
 }
 
 func (s *streams) Stop() {
-	s.cancelCause(fmt.Errorf("%s", "stopinng"))
+	s.cancel()
 	s.wg.Wait()
-}
-
-func (s *streams) checkErr(err error) {
-	if !errors.Is(err, context.Canceled) {
-		slog.Error("reconnecting")
-		time.Sleep(s.interval)
-	}
 }
 
 func (s *streams) mergeCh(ch <-chan *domain.Exchange) {
@@ -83,3 +78,4 @@ func (s *streams) mergeCh(ch <-chan *domain.Exchange) {
 		s.outCh <- ex
 	}
 }
+

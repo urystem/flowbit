@@ -50,7 +50,6 @@ func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error)
 		for {
 			select {
 			case <-ctx.Done():
-				ctx.Err()
 				s.mu.Lock()
 				s.using = false
 				s.mu.Unlock()
@@ -58,7 +57,8 @@ func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error)
 			default:
 				ex := new(domain.Exchange)
 				if err := dec.Decode(ex); err != nil { //
-					fmt.Println(err)
+					// fmt.Println(err)
+					// slog.Error("", err)
 					return
 				}
 				ex.Source = s.exName

@@ -10,6 +10,7 @@ import (
 )
 
 type worker struct {
+	id   int
 	jobs <-chan *domain.Exchange
 	wg   *sync.WaitGroup
 	rdb  outbound.RedisInterForWorkers
@@ -26,7 +27,8 @@ func (app *workerControl) initWorker(rdb outbound.RedisInterForWorkers, jobs <-c
 	}
 }
 
-func (w *worker) Start() {
+func (w *worker) Start(id int) {
+	w.id = id
 	w.wg.Go(w.myFn)
 }
 

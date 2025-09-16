@@ -25,14 +25,8 @@ func (c *config) initWorkerPoolCfg() workerCfg {
 	}
 }
 
-func (w *workerCfg) GetBoolElasticWorker() bool {
-	return w.elastic
-}
+func (w *workerCfg) GetBoolElasticWorker() bool { return w.elastic }
 
-func (w *workerCfg) GetCountOfMaxOrDefWorker() int {
-	return w.maxOrDefWorker
-}
+func (w *workerCfg) GetCountOfMaxOrDefWorker() int { return w.maxOrDefWorker }
 
-func (w *workerCfg) GetElasticInterval() time.Duration {
-	return w.interv
-}
+func (w *workerCfg) GetElasticInterval() time.Duration { return w.interv }
