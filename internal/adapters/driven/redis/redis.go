@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"marketflow/internal/domain"
@@ -33,8 +34,8 @@ func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
 		ex.Timestamp,            // time
 		ex.Price,                // price
 		&redis.TSOptions{
-			Retention: 70000, // 70 SEC
-			// DuplicatePolicy: "LAST",
+			Retention:       70000, // 70 SEC
+			DuplicatePolicy: "LAST",
 			Labels: map[string]string{
 				"exchange": ex.Source,
 				"symbol":   ex.Symbol,
@@ -57,10 +58,41 @@ func (rdb *myRedis) Get(ctx context.Context, keys ...string) ([]domain.Exchange,
 		int(now),
 		keys,
 	).Result()
-	fmt.Println(err)
+	if err != nil {
+		return nil, err
+	}
 	var exchanges []domain.Exchange
+	// serie это 3 интерфейс [3]interface
+	// и нам нужна только последный
 	for exSym, serie := range res {
-		fmt.Println(exSym, serie, "ddddddddd")
+		points, ok := serie[2].([]any)
+		if !ok {
+			return nil, fmt.Errorf("%s", "series is not [3]any")
+		}
+		myexSym := strings.Split(exSym, ":")
+		if len(myexSym) != 2 {
+			return nil, fmt.Errorf("%s", "exchange and symbol key not valid")
+		}
+		for _, p := range points {
+			arr, ok := p.([]any)
+			if !ok || len(arr) != 2 {
+				return nil, fmt.Errorf("%s", "here is not time and price")
+			}
+			myTime, ok := arr[0].(int64)
+			if !ok {
+				return nil, fmt.Errorf("%s", "invalid time")
+			}
+			myPrice, ok := arr[1].(float64)
+			if !ok {
+				return nil, fmt.Errorf("%s", "invalid price")
+			}
+			exchanges = append(exchanges, domain.Exchange{
+				Source:    myexSym[0],
+				Symbol:    myexSym[1],
+				Price:     myPrice,
+				Timestamp: uint64(myTime),
+			})
+		}
 	}
 	return exchanges, nil
 }

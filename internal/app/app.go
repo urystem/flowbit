@@ -18,10 +18,7 @@ type myApp struct {
 	red            outbound.RedisInterGlogal
 	workCfg        inbound.WorkerCfg
 	workers        WorkerInter
-
-	// ticker inbound.Ticker         // for run
-	srv inbound.ServerInter // for init and for run
-	// wg  sync.WaitGroup
+	srv            inbound.ServerInter // for init and for run
 }
 
 func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) {
@@ -62,8 +59,12 @@ func (app *myApp) Run() error {
 	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
 	app.workers.Start(app.ctx)
 	time.Sleep(4 * time.Second)
-	app.red.Get(app.ctx, "exchange1:BTCUSDT")
-
+	// res, err := app.red.Get(app.ctx, "exchange=exchange1")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// } else {
+	// 	fmt.Println(res)
+	// }
 	// app.initTicker()
 	// time.Sleep(10 * time.Minute)
 	return nil
