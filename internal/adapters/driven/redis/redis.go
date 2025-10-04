@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
@@ -49,13 +48,12 @@ func (rdb *myRedis) CloseRedis() error {
 	return rdb.Close()
 }
 
-func (rdb *myRedis) Get(ctx context.Context, keys ...string) ([]domain.Exchange, error) {
-	now := time.Now().UnixMilli()
-	fmt.Println(now)
+// for 60s > target
+func (rdb *myRedis) GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error) {
 	res, err := rdb.TSMRange(
 		ctx,
-		int(now-60_000),
-		int(now),
+		from,
+		to,
 		keys,
 	).Result()
 	if err != nil {
@@ -96,3 +94,11 @@ func (rdb *myRedis) Get(ctx context.Context, keys ...string) ([]domain.Exchange,
 	}
 	return exchanges, nil
 }
+
+// 12:00
+// 12:01
+// 12:02
+// 12:03 +
+// 12:04 +
+
+// 12:01:33 - 12:04:33

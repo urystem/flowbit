@@ -59,12 +59,12 @@ func (app *myApp) Run() error {
 	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
 	app.workers.Start(app.ctx)
 	time.Sleep(4 * time.Second)
-	// res, err := app.red.Get(app.ctx, "exchange=exchange1")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// } else {
-	// 	fmt.Println(res)
-	// }
+	res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(res)
+	}
 	// app.initTicker()
 	// time.Sleep(10 * time.Minute)
 	return nil
