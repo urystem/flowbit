@@ -20,6 +20,7 @@ func main() {
 	app, err := bootstrap.InitApp(ctxBack, cfg)
 	if err != nil {
 		slog.Error(err.Error())
+		os.Exit(1)
 		return
 	}
 

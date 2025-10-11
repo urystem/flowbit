@@ -15,7 +15,7 @@ type config struct {
 func Load() inbound.Config {
 	conf := &config{}
 	// conf.server = conf.initServerCfg()
-	// conf.db = conf.initDBConfig()
+	conf.db = conf.initDBConfig()
 	conf.redis = conf.initRedisConf()
 	conf.src = conf.initSources()
 	conf.wr = conf.initWorkerPoolCfg()

@@ -1,5 +1,33 @@
 package app
 
+import (
+	"log/slog"
+	"time"
+)
+
+func (app *myApp) tickerOneMinute() {
+	ticker := time.NewTicker(1 * time.Minute) // 🕒 каждый 1 минуту
+	defer ticker.Stop()
+	for {
+		select {
+		case <-app.ctx.Done():
+			return
+		case <-ticker.C:
+			avgs, err := app.red.GetAvarages(app.ctx)
+			if err != nil {
+				slog.Error("ticker", "error:", err)
+				continue
+			}
+			err = app.db.SaveWithCopyFrom(app.ctx, avgs)
+			if err != nil {
+				slog.Error("ticker", "psql", err)
+			} else {
+				slog.Info("saved to sql")
+			}
+		}
+	}
+}
+
 // func (app *myApp) initTicker() {
 // 	app.wg.Add(2)
 

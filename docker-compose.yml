@@ -6,6 +6,11 @@ services:
       container_name: marketflow
       env_file:
         - .env
+      depends_on:
+        redisDB:
+          condition: service_healthy
+        db:
+          condition: service_healthy
     exchange1:
       image: terow/exchanges:v1
       container_name: exchange1
@@ -23,25 +28,6 @@ services:
       container_name: exchange3
       ports:
       - "40103:40103"
-      # environment:
-      #   SERVER_PORT: ${SERVER_PORT:-8080}
-      #   REDIS_PORT: ${REDIS_PORT:-6379}
-      #   REDIS_PASS: ${REDIS_PASS:-mypassword}
-      #   SESSION_NAME: ${SESSION_NAME:-sessionID}
-      #   SESSION_DURATION: ${SESSION_DURATION:-7}
-       
-      #   DB_HOST: ${DB_HOST:-leetboardDB}
-      #   DB_PORT: ${DB_PORT:-5432}
-      #   DB_USER: ${DB_USER:-ukabdoll}
-      #   DB_PASSWORD: ${DB_PASSWORD:-07654321}
-      #   DB_NAME: ${DB_NAME:-1337b04rd}
-      #   DB_SSLMODE: ${DB_SSLMODE:-disable}
-    #   depends_on:
-    #     redisDB:
-    #       condition: service_healthy
-    #       # condition: service_started
-    #     db:
-    #       condition: service_healthy
     redisDB:
       image: redis:latest
       container_name: marketflow-redis
@@ -55,22 +41,22 @@ services:
         interval: 3s
         timeout: 3s
         retries: 5
-    # db:
-    #   image: postgres:alpine
-    #   container_name: leetboard_db
-    #   ports:
-    #    - ${DB_PORT:-5432}:5432
-    #   environment:
-    #     POSTGRES_USER: ${DB_USER:-ukabdoll}
-    #     POSTGRES_PASSWORD: ${DB_PASSWORD:-07654321}
-    #     POSTGRES_DB: ${DB_NAME:-1337b04rd}
-    #   volumes:
-    #     - ./internal/adapters/driven/postgres/migration/init.sql:/docker-entrypoint-initdb.d/init.sql
-    #   healthcheck:
-    #     test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
-    #     interval: 3s
-    #     timeout: 5s
-    #     retries: 10 # Если база данных заработает после всех retries, контейнер не вернется в healthy автоматически!
+    db:
+      image: postgres:alpine
+      container_name: marketflow_db
+      ports:
+       - ${DB_PORT:-5432}:5432
+      environment:
+        POSTGRES_USER: ${DB_USER:-ukabdoll}
+        POSTGRES_PASSWORD: ${DB_PASSWORD:-07654321}
+        POSTGRES_DB: ${DB_NAME:-marketflow}
+      volumes:
+        - ./internal/adapters/driven/postgres/migration/init.sql:/docker-entrypoint-initdb.d/init.sql
+      healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+        interval: 3s
+        timeout: 5s
+        retries: 10 # Если база данных заработает после всех retries, контейнер не вернется в healthy автоматически!
 
       # volumes:
       #   - ./minio/data:/data   # ⬅ сохраняем в ./data локально

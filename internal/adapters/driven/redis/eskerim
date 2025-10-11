@@ -1,8 +1,8 @@
 1) 
 
-docker exec -it leetboard-redis sh
+docker exec -it marketflow-redis sh
 
-# leetboard-redis - container name or id
+# marketflow-redis - container name or id
 
 
 2)

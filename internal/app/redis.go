@@ -12,3 +12,4 @@ import (
 func (app *myApp) initRedis(ctx context.Context, redisCfg inbound.RedisConfig) (outbound.RedisInterGlogal, error) {
 	return redis.InitRickRedis(ctx, redisCfg)
 }
+

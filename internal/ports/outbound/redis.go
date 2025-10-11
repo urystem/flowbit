@@ -9,6 +9,7 @@ import (
 type RedisInterForWorkers interface {
 	Add(ctx context.Context, ex *domain.Exchange) error
 	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
+	GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, error)
 }
 
 type RedisInterGlogal interface {

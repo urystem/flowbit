@@ -18,6 +18,7 @@ func (c *config) initDBConfig() dbConfig {
 	if temPort < 0 || math.MaxUint16 < temPort {
 		panic("")
 	}
+	dbConf.port = uint16(temPort)
 	dbConf.user = mustGetEnvString("DB_USER")
 	dbConf.password = mustGetEnvString("DB_PASSWORD")
 	dbConf.name = mustGetEnvString("DB_NAME")

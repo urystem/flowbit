@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"marketflow/internal/adapters/driven/postgres"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 )
@@ -18,7 +19,8 @@ type myApp struct {
 	red            outbound.RedisInterGlogal
 	workCfg        inbound.WorkerCfg
 	workers        WorkerInter
-	srv            inbound.ServerInter // for init and for run
+	db             outbound.PgxInter
+	// srv            inbound.ServerInter // for init and for run
 }
 
 func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) {
@@ -37,6 +39,12 @@ func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) 
 	}
 	app.red = myRed
 	app.workCfg = cfg.GetWorkerCfg()
+
+	myDB, err := postgres.InitDB(app.ctx, cfg.GetDBConfig())
+	if err != nil {
+		return nil, err
+	}
+	app.db = myDB
 	return app, nil
 }
 
@@ -58,14 +66,17 @@ func (app *myApp) Run() error {
 
 	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
 	app.workers.Start(app.ctx)
-	time.Sleep(4 * time.Second)
-	res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(res)
-	}
+	time.Sleep(10 * time.Second)
+	// res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
+	// res, err := app.red.GetAvarages(context.TODO())
+	// if err != nil {
+	// 	fmt.Println(err)
+	// } else {
+	// 	fmt.Println(len(res))
+	// 	fmt.Println(res)
+	// }
 	// app.initTicker()
+	go app.tickerOneMinute()
 	// time.Sleep(10 * time.Minute)
 	return nil
 	// return app.srv.ListenServe()

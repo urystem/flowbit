@@ -1,34 +1,69 @@
 package postgres
 
+import (
+	"context"
+
+	"marketflow/internal/domain"
+
+	"github.com/jackc/pgx/v5"
+)
+
 // import "context"
 
-// func (db *poolDB) Archiver(ctx context.Context) error {
-// 	const sql = `
-// UPDATE posts
-// SET archived = true
-// WHERE archived = false
-//   AND (
-//     (
-//       -- нет комментариев, прошло более 10 минут с момента публикации
-//       NOT EXISTS (
-//         SELECT 1 FROM comments WHERE comments.post_id = posts.post_id
-//       )
-//       AND post_time < NOW() - interval '10 minutes'
-//     )
-//     OR
-//     (
-//       -- есть комментарии, и последний был более 15 минут назад
-//       EXISTS (
-//         SELECT 1 FROM comments WHERE comments.post_id = posts.post_id
-//       )
-//       AND (
-//         SELECT MAX(comment_time)
-//         FROM comments
-//         WHERE comments.post_id = posts.post_id
-//       ) < NOW() - interval '15 minutes'
-//     )
-//   );`
-// 	_, err := db.Exec(ctx, sql)
+func (db *poolDB) SaveAverage(ctx context.Context, avgs []domain.ExchangeAvg) error {
+	const sql = `
+	INSERT INTO exchange_averages
+	(source, symbol, count, average_price, min_price, max_price, at_time)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-// 	return err
-// }
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) // откат, если что-то пойдёт не так
+
+	batch := &pgx.Batch{}
+	for _, v := range avgs {
+		batch.Queue(sql,
+			v.Source,
+			v.Symbol,
+			v.Count,
+			v.AvgPrice,
+			v.MinPrice,
+			v.MaxPrice,
+			v.AtTime,
+		)
+	}
+	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	for range avgs {
+		if _, err := br.Exec(); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+func (db *poolDB) SaveWithCopyFrom(ctx context.Context, avgs []domain.ExchangeAvg) error {
+	rows := make([][]any, len(avgs))
+	for i, v := range avgs {
+		rows[i] = []any{
+			v.Source,
+			v.Symbol,
+			v.Count,
+			v.AvgPrice,
+			v.MinPrice,
+			v.MaxPrice,
+			v.AtTime,
+		}
+	}
+
+	_, err := db.CopyFrom(
+		ctx,
+		pgx.Identifier{"exchange_averages"},
+		[]string{"source", "symbol", "count", "average_price", "min_price", "max_price", "at_time"},
+		pgx.CopyFromRows(rows),
+	)
+	return err
+}
