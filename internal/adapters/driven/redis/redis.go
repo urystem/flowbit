@@ -25,8 +25,9 @@ func InitRickRedis(ctx context.Context, red inbound.RedisConfig) (outbound.Redis
 		Password: red.GetPass(),              // пароль, если есть
 		// DB:       0,                          // номер БД (0 по умолчанию)
 	})
-
-	return &myRedis{Client: rdb, lastBuckupTime: int(time.Now().UnixMilli())}, rdb.Ping(ctx).Err()
+	ti := int(time.Now().UnixMilli())
+	fmt.Println(ti)
+	return &myRedis{Client: rdb, lastBuckupTime: ti}, rdb.Ping(ctx).Err()
 }
 
 func (rdb *myRedis) Add(ctx context.Context, ex *domain.Exchange) error {
@@ -100,13 +101,14 @@ func (rdb *myRedis) GetByLabel(ctx context.Context, from, to int, keys ...string
 
 func (rdb *myRedis) GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, error) {
 	mylast := rdb.lastBuckupTime
-	rdb.lastBuckupTime = int(time.Now().UnixMilli())  // текущие миллисекунды Unix
-	now := rdb.lastBuckupTime - 27
+	rdb.lastBuckupTime = int(time.Now().UnixMilli()) - 127 // текущие миллисекунды Unix
+	now := rdb.lastBuckupTime - 128
 	keys, err := rdb.Keys(ctx, "*").Result()
 	if err != nil {
 		return nil, err
 	}
-	bucketDuration := 80000
+	bucketDuration := 150000
+	fmt.Println(mylast, now)
 	avgs := make([]domain.ExchangeAvg, len(keys))
 	for i, key := range keys {
 		// BucketDuration ар осындай уакыттагы орташа баганы кайтарады
@@ -119,7 +121,7 @@ func (rdb *myRedis) GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, erro
 		if err != nil {
 			return nil, err
 		} else if len(avg) != 1 {
-			fmt.Println(avg)
+			fmt.Println(avg, now-mylast)
 			return nil, fmt.Errorf("%s%d", "avg aggregation returned not 1 avg, it is", len(avg))
 		}
 
@@ -132,7 +134,6 @@ func (rdb *myRedis) GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, erro
 		avgs[i].AvgPrice = avg[0].Value
 		// avgs[i].AtTime = int64(rdb.lastBuckupTime)
 		avgs[i].AtTime = avg[0].Timestamp
-
 		count, err := rdb.TSRangeWithArgs(ctx, key, mylast, now, &redis.TSRangeOptions{
 			Aggregator:     redis.Count,
 			BucketDuration: bucketDuration,
@@ -144,7 +145,7 @@ func (rdb *myRedis) GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, erro
 		}
 		avgs[i].Count = int(count[0].Value)
 
-		minPrice, err := rdb.TSRangeWithArgs(ctx, key, mylast, rdb.lastBuckupTime, &redis.TSRangeOptions{
+		minPrice, err := rdb.TSRangeWithArgs(ctx, key, mylast, now, &redis.TSRangeOptions{
 			Aggregator:     redis.Min,
 			BucketDuration: bucketDuration,
 		}).Result()
@@ -155,7 +156,7 @@ func (rdb *myRedis) GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, erro
 		}
 		avgs[i].MinPrice = minPrice[0].Value
 
-		maxPrice, err := rdb.TSRangeWithArgs(ctx, key, mylast, rdb.lastBuckupTime, &redis.TSRangeOptions{
+		maxPrice, err := rdb.TSRangeWithArgs(ctx, key, mylast, now, &redis.TSRangeOptions{
 			Aggregator:     redis.Max,
 			BucketDuration: bucketDuration,
 		}).Result()
@@ -167,6 +168,7 @@ func (rdb *myRedis) GetAvarages(ctx context.Context) ([]domain.ExchangeAvg, erro
 		avgs[i].MaxPrice = maxPrice[0].Value
 	}
 	rdb.lastBuckupTime++
+	fmt.Println(avgs[0].AtTime)
 	return avgs, nil
 }
 

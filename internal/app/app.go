@@ -66,6 +66,7 @@ func (app *myApp) Run() error {
 
 	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
 	app.workers.Start(app.ctx)
+	go app.tickerOneMinute()
 	time.Sleep(10 * time.Second)
 	// res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
 	// res, err := app.red.GetAvarages(context.TODO())
@@ -76,7 +77,6 @@ func (app *myApp) Run() error {
 	// 	fmt.Println(res)
 	// }
 	// app.initTicker()
-	go app.tickerOneMinute()
 	// time.Sleep(10 * time.Minute)
 	return nil
 	// return app.srv.ListenServe()
