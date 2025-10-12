@@ -10,7 +10,7 @@ import (
 
 // import "context"
 
-func (db *poolDB) SaveAverage(ctx context.Context, avgs []domain.ExchangeAvg) error {
+func (db *poolDB) SaveAverage(ctx context.Context, avg *domain.ExchangeAvg) error {
 	const sql = `
 	INSERT INTO exchange_averages
 	(source, symbol, count, average_price, min_price, max_price, at_time)
@@ -23,7 +23,7 @@ func (db *poolDB) SaveAverage(ctx context.Context, avgs []domain.ExchangeAvg) er
 	defer tx.Rollback(ctx) // откат, если что-то пойдёт не так
 
 	batch := &pgx.Batch{}
-	for _, v := range avgs {
+	for _, v := range avg.ExAvgs {
 		batch.Queue(sql,
 			v.Source,
 			v.Symbol,
@@ -31,13 +31,12 @@ func (db *poolDB) SaveAverage(ctx context.Context, avgs []domain.ExchangeAvg) er
 			v.AvgPrice,
 			v.MinPrice,
 			v.MaxPrice,
-			v.AtTime,
 		)
 	}
 	br := tx.SendBatch(ctx, batch)
 	defer br.Close()
 
-	for range avgs {
+	for range avg.ExAvgs {
 		if _, err := br.Exec(); err != nil {
 			return err
 		}
@@ -45,9 +44,9 @@ func (db *poolDB) SaveAverage(ctx context.Context, avgs []domain.ExchangeAvg) er
 	return tx.Commit(ctx)
 }
 
-func (db *poolDB) SaveWithCopyFrom(ctx context.Context, avgs []domain.ExchangeAvg) error {
-	rows := make([][]any, len(avgs))
-	for i, v := range avgs {
+func (db *poolDB) SaveWithCopyFrom(ctx context.Context, avg *domain.ExchangeAvg) error {
+	rows := make([][]any, len(avg.ExAvgs))
+	for i, v := range avg.ExAvgs {
 		rows[i] = []any{
 			v.Source,
 			v.Symbol,
@@ -55,7 +54,7 @@ func (db *poolDB) SaveWithCopyFrom(ctx context.Context, avgs []domain.ExchangeAv
 			v.AvgPrice,
 			v.MinPrice,
 			v.MaxPrice,
-			v.AtTime,
+			avg.AtTime,
 		}
 	}
 

@@ -7,5 +7,5 @@ import (
 )
 
 type PgxInter interface {
-	SaveWithCopyFrom(ctx context.Context, avgs []domain.ExchangeAvg) error
+	SaveWithCopyFrom(ctx context.Context, avg *domain.ExchangeAvg) error
 }

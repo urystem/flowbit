@@ -6,24 +6,29 @@ import (
 )
 
 func (app *myApp) tickerOneMinute() {
-	ticker := time.NewTicker(1 * time.Minute) // 🕒 каждый 1 минуту
-	defer ticker.Stop()
+	const interval = time.Minute
+	next := time.Now().Truncate(interval).Add(interval) // ближайшая "ровная" минута
+	timer := time.NewTimer(time.Until(next))
+	defer timer.Stop()
 	for {
 		select {
 		case <-app.ctx.Done():
 			return
-		case <-ticker.C:
-			avgs, err := app.red.GetAvarages(app.ctx)
+		case <-timer.C:
+			avgs, err := app.red.GetAvarages2(app.ctx, int(next.UnixMilli()))
 			if err != nil {
 				slog.Error("ticker", "error:", err)
-				continue
-			}
-			err = app.db.SaveWithCopyFrom(app.ctx, avgs)
-			if err != nil {
-				slog.Error("ticker", "psql", err)
 			} else {
-				slog.Info("saved to sql")
+				err = app.db.SaveWithCopyFrom(app.ctx, avgs)
+				if err != nil {
+					slog.Error("ticker", "psql", err)
+				} else {
+					slog.Info("saved to sql")
+				}
 			}
+
+			next = next.Add(interval)
+			timer.Reset(time.Until(next))
 		}
 	}
 }
