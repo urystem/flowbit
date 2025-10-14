@@ -1,13 +1,17 @@
 package app
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
+
+	"marketflow/internal/domain"
 )
 
-func (app *myApp) tickerOneMinute() {
+func (app *myApp) timerOneMinute() {
 	const interval = time.Minute
-	next := time.Now().Truncate(interval).Add(interval) // ближайшая "ровная" минута
+	from := time.Now().Truncate(interval)
+	next := from.Add(interval) // ближайшая "ровная" минута
 	timer := time.NewTimer(time.Until(next))
 	defer timer.Stop()
 	for {
@@ -15,20 +19,34 @@ func (app *myApp) tickerOneMinute() {
 		case <-app.ctx.Done():
 			return
 		case <-timer.C:
-			avgs, err := app.red.GetAvarages2(app.ctx, int(next.UnixMilli()))
+
+			avgs, err := app.red.GetAllAverages(app.ctx, int(from.UnixMilli()), int(next.UnixMilli()))
 			if err != nil {
 				slog.Error("ticker", "error:", err)
 			} else {
-				err = app.db.SaveWithCopyFrom(app.ctx, avgs)
+				err = app.db.SaveWithCopyFrom(app.ctx, avgs, from)
 				if err != nil {
 					slog.Error("ticker", "psql", err)
 				} else {
 					slog.Info("saved to sql")
 				}
 			}
-
+			from = next
 			next = next.Add(interval)
 			timer.Reset(time.Until(next))
+		}
+	}
+}
+
+func (app *myApp) tickerToCheckFallBack() {
+	batch := make([]domain.Exchange, 0, 512)
+
+	for ex := range app.fallBack {
+
+		batch = append(batch, *ex)
+		if len(batch) == 512 {
+			fmt.Println("batched")
+			batch = batch[:0]
 		}
 	}
 }

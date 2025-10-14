@@ -1,7 +1,5 @@
 package domain
 
-import "time"
-
 type Exchange struct {
 	Source    string
 	Symbol    string  `json:"symbol"`
@@ -12,13 +10,8 @@ type Exchange struct {
 type ExchangeAggregation struct {
 	Source   string
 	Symbol   string
-	Count    int
+	Count    uint
 	AvgPrice float64
 	MinPrice float64
 	MaxPrice float64
-}
-
-type ExchangeAvg struct {
-	ExAvgs []ExchangeAggregation
-	AtTime time.Time
 }

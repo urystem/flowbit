@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"marketflow/internal/adapters/driven/postgres"
+	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 )
@@ -20,6 +20,7 @@ type myApp struct {
 	workCfg        inbound.WorkerCfg
 	workers        WorkerInter
 	db             outbound.PgxInter
+	fallBack       chan *domain.Exchange
 	// srv            inbound.ServerInter // for init and for run
 }
 
@@ -45,6 +46,7 @@ func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) 
 		return nil, err
 	}
 	app.db = myDB
+	app.fallBack = make(chan *domain.Exchange, 512)
 	return app, nil
 }
 
@@ -64,10 +66,11 @@ func (app *myApp) Run() error {
 	slog.Info("server starting")
 	uCh := app.strm.Start(app.ctx)
 
-	app.workers = app.initWorkers(app.workCfg, app.red, uCh)
+	app.workers = app.initWorkers(app.workCfg, app.red, uCh, app.fallBack)
 	app.workers.Start(app.ctx)
-	go app.tickerOneMinute()
-	time.Sleep(10 * time.Second)
+	go app.timerOneMinute()
+	go app.tickerToCheckFallBack()
+	// time.Sleep(10 * time.Second)
 	// res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
 	// res, err := app.red.GetAvarages(context.TODO())
 	// if err != nil {

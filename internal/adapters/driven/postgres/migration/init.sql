@@ -14,6 +14,6 @@ CREATE TABLE
     source VARCHAR(128) NOT NULL CHECK (char_length(trim(source)) > 0),
     symbol VARCHAR(128) NOT NULL CHECK (char_length(trim(symbol)) > 0),
     price DOUBLE PRECISION NOT NULL CHECK (price > 0),
-    time_stamp BIGINT NOT NULL,
+    time_stamp TIMESTAMPTZ (3) NOT NULL,
     CONSTRAINT exchange_unique UNIQUE (source, symbol, time_stamp)
   );

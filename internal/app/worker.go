@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 
 	"marketflow/internal/domain"
@@ -10,20 +9,21 @@ import (
 )
 
 type worker struct {
-	id   int
-	jobs <-chan *domain.Exchange
-	wg   *sync.WaitGroup
-	rdb  outbound.RedisInterForWorkers
-	// psql
-	quit chan struct{}
+	id       int
+	jobs     <-chan *domain.Exchange
+	wg       *sync.WaitGroup
+	rdb      outbound.RedisInterForWorkers
+	fallback chan<- *domain.Exchange
+	quit     chan struct{}
 }
 
-func (app *workerControl) initWorker(rdb outbound.RedisInterForWorkers, jobs <-chan *domain.Exchange, wg *sync.WaitGroup) *worker {
+func (app *workerControl) initWorker(rdb outbound.RedisInterForWorkers, jobs <-chan *domain.Exchange, fallBack chan<- *domain.Exchange, wg *sync.WaitGroup) *worker {
 	return &worker{
-		rdb:  rdb,
-		jobs: jobs,
-		quit: make(chan struct{}),
-		wg:   wg,
+		rdb:      rdb,
+		jobs:     jobs,
+		quit:     make(chan struct{}),
+		wg:       wg,
+		fallback: fallBack,
 	}
 }
 
@@ -44,7 +44,7 @@ func (w *worker) myFn() {
 			}
 			err := w.rdb.Add(context.TODO(), ex)
 			if err != nil {
-				slog.Error(err.Error())
+				w.fallback <- ex
 			}
 		}
 	}

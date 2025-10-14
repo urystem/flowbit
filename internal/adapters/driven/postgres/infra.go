@@ -29,9 +29,13 @@ func InitDB(ctx context.Context, cfg inbound.DBConfig) (outbound.PgxInter, error
 	if err != nil {
 		return nil, err
 	}
-	return &poolDB{pool}, nil
+	return &poolDB{pool}, pool.Ping(ctx)
 }
 
 func (pool *poolDB) CloseDB() {
 	pool.Close()
+}
+
+func (pool *poolDB) CheckHealth(ctx context.Context) error {
+	return pool.Ping(ctx)
 }

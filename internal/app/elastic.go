@@ -22,6 +22,7 @@ type workerControl struct {
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
 	ex             <-chan *domain.Exchange
+	fallBack       chan<- *domain.Exchange
 }
 
 type WorkerInter interface {
@@ -29,12 +30,13 @@ type WorkerInter interface {
 	CleanAll()
 }
 
-func (app *myApp) initWorkers(cfg inbound.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange) WorkerInter {
+func (app *myApp) initWorkers(cfg inbound.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) WorkerInter {
 	return &workerControl{
 		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
 		elastic:        cfg.GetBoolElasticWorker(),
 		rdb:            rdb,
 		ex:             ex,
+		fallBack:       fallBack,
 		interval:       cfg.GetElasticInterval(),
 	}
 }
@@ -50,7 +52,7 @@ func (wc *workerControl) Start(ctx context.Context) {
 }
 
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.rdb, wc.ex, &wc.wg)
+	w := wc.initWorker(wc.rdb, wc.ex, wc.fallBack, &wc.wg)
 	wc.workers = append(wc.workers, w)
 	w.Start(len(wc.workers))
 	slog.Info("⚡ Added worker", "total:", len(wc.workers))
