@@ -5,6 +5,11 @@ type redisConfig struct {
 	pass string
 }
 
+type RedisConfig interface {
+	GetAddr() string
+	GetPass() string
+}
+
 func (c *config) initRedisConf() redisConfig {
 	conf := redisConfig{}
 	conf.port = mustGetEnvString("REDIS_PORT")

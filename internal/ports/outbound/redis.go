@@ -8,12 +8,12 @@ import (
 
 type RedisInterForWorkers interface {
 	Add(ctx context.Context, ex *domain.Exchange) error
-	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
-	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 }
 
 type RedisInterGlogal interface {
 	// GetAndDelRandomCharacter(ctx context.Context) (*domain.Character, error)
 	RedisInterForWorkers
+	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
+	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 	CloseRedis() error
 }

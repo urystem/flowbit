@@ -11,6 +11,15 @@ type dbConfig struct {
 	sslMode  string
 }
 
+type DBConfig interface {
+	GetHostName() string
+	GetPort() uint16
+	GetUser() string
+	GetPassword() string
+	GetDBName() string
+	GetSSLMode() string
+}
+
 func (c *config) initDBConfig() dbConfig {
 	dbConf := dbConfig{}
 	dbConf.host = mustGetEnvString("DB_HOST")

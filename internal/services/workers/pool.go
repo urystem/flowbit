@@ -1,12 +1,12 @@
-package app
+package workers
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 
+	"marketflow/internal/config"
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
@@ -14,9 +14,8 @@ import (
 
 type workerControl struct {
 	ctx            context.Context
-	cancelFuncC    context.CancelCauseFunc
 	wg             sync.WaitGroup
-	workers        []*worker
+	workers        []inbound.Worker
 	maxOrDefWorker int
 	interval       time.Duration
 	elastic        bool
@@ -25,12 +24,7 @@ type workerControl struct {
 	fallBack       chan<- *domain.Exchange
 }
 
-type WorkerInter interface {
-	Start(ctx context.Context)
-	CleanAll()
-}
-
-func (app *myApp) initWorkers(cfg inbound.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) WorkerInter {
+func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) inbound.WorkerPoolInter {
 	return &workerControl{
 		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
 		elastic:        cfg.GetBoolElasticWorker(),
@@ -42,7 +36,7 @@ func (app *myApp) initWorkers(cfg inbound.WorkerCfg, rdb outbound.RedisInterForW
 }
 
 func (wc *workerControl) Start(ctx context.Context) {
-	wc.ctx, wc.cancelFuncC = context.WithCancelCause(ctx)
+	wc.ctx = ctx
 	for range wc.maxOrDefWorker {
 		wc.addWorker()
 	}
@@ -52,9 +46,9 @@ func (wc *workerControl) Start(ctx context.Context) {
 }
 
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.rdb, wc.ex, wc.fallBack, &wc.wg)
+	w := wc.initWorker(wc.rdb, wc.ex, wc.fallBack)
 	wc.workers = append(wc.workers, w)
-	w.Start(len(wc.workers))
+	wc.wg.Go(w.Start)
 	slog.Info("⚡ Added worker", "total:", len(wc.workers))
 }
 
@@ -87,7 +81,6 @@ func (wc *workerControl) elasTicker() {
 }
 
 func (wc *workerControl) CleanAll() { // STOP
-	wc.cancelFuncC(fmt.Errorf("stop worker"))
 	// for range wc.workers {
 	// 	wc.removeWorker()
 	// }

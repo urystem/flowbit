@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"marketflow/internal/ports/inbound"
+	"marketflow/internal/ports/outbound"
 )
 
 type stream struct {
@@ -15,7 +15,7 @@ type stream struct {
 	mu     sync.Mutex
 }
 
-func InitStream(addr string) (inbound.StreamAdapterInter, error) {
+func InitStream(addr string) (outbound.StreamAdapterInter, error) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err

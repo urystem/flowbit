@@ -2,8 +2,6 @@ package router
 
 import (
 	"net/http"
-
-	"marketflow/internal/ports/inbound"
 )
 
 // type router struct {
@@ -11,7 +9,22 @@ import (
 // 	handler    inbound.HandlerInter
 // }
 
-func NewRoute(hand inbound.HandlerInter) http.Handler {
+type HandlerInter interface {
+	Catalog(w http.ResponseWriter, r *http.Request)
+	ServePostImage(w http.ResponseWriter, r *http.Request)
+	CreatePostPage(w http.ResponseWriter, r *http.Request)
+	SubmitPost(w http.ResponseWriter, r *http.Request)
+	Archive(w http.ResponseWriter, r *http.Request)
+	ArchivePost(w http.ResponseWriter, r *http.Request)
+	ServeCommentImage(w http.ResponseWriter, r *http.Request)
+	ActivePost(w http.ResponseWriter, r *http.Request)
+	AddComment(w http.ResponseWriter, r *http.Request)
+	Reply(w http.ResponseWriter, r *http.Request)
+	// CreateComment(w http.ResponseWriter, r *http.Request)
+	// ErrorHandler
+}
+
+func NewRoute(hand HandlerInter) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", hand.Catalog)
 	// mux.Handle("GET /", middle.CheckOrSetSession(http.HandlerFunc(hand.Catalog)))

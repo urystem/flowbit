@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 
-	"marketflow/internal/ports/inbound"
+	"marketflow/internal/config"
 	"marketflow/internal/ports/outbound"
 
 	"github.com/redis/go-redis/v9"
@@ -13,7 +13,7 @@ type myRedis struct {
 	*redis.Client
 }
 
-func InitRickRedis(ctx context.Context, red inbound.RedisConfig) (outbound.RedisInterGlogal, error) {
+func InitRickRedis(ctx context.Context, red config.RedisConfig) (outbound.RedisInterGlogal, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "redisDB:" + red.GetAddr(), // имя сервиса + порт                 // адрес Redis
 		Password: red.GetPass(),              // пароль, если есть

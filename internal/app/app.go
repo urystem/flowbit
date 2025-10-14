@@ -9,26 +9,30 @@ import (
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
+	"marketflow/internal/services/stream"
+	"marketflow/internal/services/workers"
+
+	"marketflow/internal/config"
 )
 
 // DI container
 type myApp struct {
 	ctx            context.Context
 	ctxCancelCause context.CancelCauseFunc
-	strm           inbound.StreamAppInter // for init //adapter
+	strm           inbound.StreamsInter
 	red            outbound.RedisInterGlogal
-	workCfg        inbound.WorkerCfg
-	workers        WorkerInter
+	workCfg        config.WorkerCfg
+	workers        inbound.WorkerPoolInter
 	db             outbound.PgxInter
 	fallBack       chan *domain.Exchange
 	// srv            inbound.ServerInter // for init and for run
 }
 
-func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) {
+func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, error) {
 	app := &myApp{}
 	app.ctx, app.ctxCancelCause = context.WithCancelCause(ctx)
 
-	strm, err := app.initStream(cfg.GetSourcesCfg())
+	strm, err := stream.InitStream(cfg.GetSourcesCfg())
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +57,7 @@ func InitApp(ctx context.Context, cfg inbound.Config) (inbound.AppInter, error) 
 func (app *myApp) Shutdown(ctx context.Context) error {
 	app.ctxCancelCause(fmt.Errorf("%s", "stopping"))
 	slog.Info("start shutdown")
-	app.strm.Stop()
+	app.strm.StopStreams()
 	slog.Info("stream")
 	app.workers.CleanAll()
 	slog.Info("workers")
@@ -64,9 +68,9 @@ func (app *myApp) Shutdown(ctx context.Context) error {
 
 func (app *myApp) Run() error {
 	slog.Info("server starting")
-	uCh := app.strm.Start(app.ctx)
+	uCh := app.strm.StartStreams(app.ctx)
 
-	app.workers = app.initWorkers(app.workCfg, app.red, uCh, app.fallBack)
+	app.workers = workers.InitWorkers(app.workCfg, app.red, uCh, app.fallBack)
 	app.workers.Start(app.ctx)
 	go app.timerOneMinute()
 	go app.tickerToCheckFallBack()

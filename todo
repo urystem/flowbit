@@ -1,2 +1,67 @@
 sync.pool kerek
 
+.
+├── cmd/
+│   └── marketflow/          # точка входа
+│       └── main.go
+│
+├── internal/
+│   ├── domain/              # сущности, логика, правила
+│   │   ├── exchange.go
+│   │   ├── order.go
+│   │   └── errors.go
+│   │
+│   ├── ports/
+│   │   ├── inbound/         # входные интерфейсы (API, Worker, Stream)
+│   │   │   ├── ExchangeService.go
+│   │   │   ├── StreamConsumer.go
+│   │   │   └── HTTPHandler.go
+│   │   └── outbound/        # выходные интерфейсы (DB, Cache, MQ)
+│   │       ├── ExchangeRepo.go
+│   │       ├── RedisCache.go
+│   │       └── FallbackRepo.go
+│   │
+│   ├── adapters/
+│   │   ├── inbound/
+│   │   │   ├── http/
+│   │   │   │   ├── handler.go
+│   │   │   │   └── router.go
+│   │   │   └── worker/
+│   │   │       ├── consumer.go
+│   │   │       └── listener.go
+│   │   └── outbound/
+│   │       ├── postgres/
+│   │       │   ├── repo.go
+│   │       │   └── infra.go
+│   │       ├── redis/
+│   │       │   ├── cache.go
+│   │       │   └── infra.go
+│   │       └── fallback/
+│   │           └── writer.go
+│   │
+│   ├── services/            # application layer / usecases
+│   │   ├── exchange/
+│   │   │   ├── service.go
+│   │   │   └── batcher.go
+│   │   └── worker/
+│   │       └── pool.go
+│   │
+│   └── bootstrap/           # сбор зависимостей
+│       ├── app.go
+│       ├── redis.go
+│       ├── postgres.go
+│       ├── server.go
+│       └── worker.go
+│
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+└── Makefile
+
+
+
+Почему адаптеры не должны видеть inbound-портыяё
+
+
+
+workercfg курту керек

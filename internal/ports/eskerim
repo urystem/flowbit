@@ -1,0 +1,3 @@
+driver adapter вызывает inbound и но полюбому вернут outbound
+driven adapters только вернуть outbound
+

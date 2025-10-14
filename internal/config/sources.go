@@ -10,6 +10,13 @@ type sources struct {
 	address []string
 	interv  time.Duration
 }
+type SourcesCfg interface {
+	// GetPort(host string) uint16
+	// GetCountWorkers() uint8
+	GetInterval() time.Duration
+	GetAddresses() []string
+	// GetCountOfAllWorkers() uint16
+}
 
 func (c *config) initSources() sources {
 	second := mustGetEnvInt("MARKET_INTERVAL")

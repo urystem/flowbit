@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"marketflow/internal/ports/inbound"
+	"marketflow/internal/config"
+	"marketflow/internal/ports/outbound"
 )
 
 type server struct {
@@ -14,7 +15,7 @@ type server struct {
 
 // type server *http.Server
 
-func InitServer(cfg inbound.ServerCfg) inbound.ServerInter {
+func InitServer(cfg config.ServerCfg) outbound.ServerInter {
 	return &server{&http.Server{
 		Addr: fmt.Sprintf(":%d", cfg.GetPort()),
 	}}

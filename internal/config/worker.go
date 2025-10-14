@@ -8,6 +8,12 @@ type workerCfg struct {
 	interv         time.Duration
 }
 
+type WorkerCfg interface {
+	GetBoolElasticWorker() bool
+	GetCountOfMaxOrDefWorker() int
+	GetElasticInterval() time.Duration
+}
+
 func (c *config) initWorkerPoolCfg() workerCfg {
 	count := mustGetEnvInt("MARKET_DEFAULT_WORKERS")
 	if count < 0 || count > 65000 {

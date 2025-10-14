@@ -1,9 +1,15 @@
 package config
 
-import "math"
+import (
+	"math"
+)
 
 type serverCfg struct {
 	port uint16
+}
+
+type ServerCfg interface {
+	GetPort() uint16
 }
 
 func (c *config) initServerCfg() serverCfg {
