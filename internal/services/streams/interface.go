@@ -1,4 +1,4 @@
-package inbound
+package streams
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 )
 
 type StreamsInter interface {
-	StartStreams(ctx context.Context) <-chan *domain.Exchange
+	StartStreams(ctx context.Context)
 	StopStreams()
+	ReturnPutFunc() func(*domain.Exchange)
 }

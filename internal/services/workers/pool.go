@@ -8,27 +8,34 @@ import (
 
 	"marketflow/internal/config"
 	"marketflow/internal/domain"
-	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 )
+
+var allocator = sync.Pool{
+	New: func() any {
+		return new(domain.Exchange)
+	},
+}
 
 type workerControl struct {
 	ctx            context.Context
 	wg             sync.WaitGroup
-	workers        []inbound.Worker
+	workers        []workerInter
 	maxOrDefWorker int
 	interval       time.Duration
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
+	put            func(*domain.Exchange)
 	ex             <-chan *domain.Exchange
 	fallBack       chan<- *domain.Exchange
 }
 
-func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, ex <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) inbound.WorkerPoolInter {
+func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, put func(*domain.Exchange), ex <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) WorkerPoolInter {
 	return &workerControl{
 		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
 		elastic:        cfg.GetBoolElasticWorker(),
 		rdb:            rdb,
+		put:            put,
 		ex:             ex,
 		fallBack:       fallBack,
 		interval:       cfg.GetElasticInterval(),
@@ -45,8 +52,18 @@ func (wc *workerControl) Start(ctx context.Context) {
 	}
 }
 
+func (wc *workerControl) CleanAll() { // STOP
+	// for range wc.workers {
+	// 	wc.removeWorker()
+	// }
+	for _, w := range wc.workers {
+		go w.Stop()
+	}
+	wc.wg.Wait()
+}
+
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.rdb, wc.ex, wc.fallBack)
+	w := wc.initWorker(wc.rdb, wc.put, wc.ex, wc.fallBack)
 	wc.workers = append(wc.workers, w)
 	wc.wg.Go(w.Start)
 	slog.Info("⚡ Added worker", "total:", len(wc.workers))
@@ -78,14 +95,4 @@ func (wc *workerControl) elasTicker() {
 			}
 		}
 	}
-}
-
-func (wc *workerControl) CleanAll() { // STOP
-	// for range wc.workers {
-	// 	wc.removeWorker()
-	// }
-	for _, w := range wc.workers {
-		go w.Stop()
-	}
-	wc.wg.Wait()
 }

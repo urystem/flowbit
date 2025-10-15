@@ -33,8 +33,8 @@ func main() {
 			quit <- syscall.SIGTERM
 		}
 	}()
-	// time.Sleep(10 * time.Second)
-	// close(quit)
+	time.Sleep(20 * time.Second)
+	close(quit)
 	<-quit // Ждём сигнал
 	slog.Info("📦 Shutting down server...")
 

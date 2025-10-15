@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
 )
 
@@ -13,9 +14,10 @@ type stream struct {
 	con    net.Conn
 	using  bool
 	mu     sync.Mutex
+	get    func() *domain.Exchange
 }
 
-func InitStream(addr string) (outbound.StreamAdapterInter, error) {
+func InitStream(addr string, get func() *domain.Exchange) (outbound.StreamAdapterInter, error) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
@@ -25,6 +27,7 @@ func InitStream(addr string) (outbound.StreamAdapterInter, error) {
 	return &stream{
 		exName: before,
 		con:    conn,
+		get:    get,
 	}, nil
 }
 

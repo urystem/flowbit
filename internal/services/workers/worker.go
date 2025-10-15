@@ -4,21 +4,22 @@ import (
 	"context"
 
 	"marketflow/internal/domain"
-	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 )
 
 type worker struct {
 	jobs     <-chan *domain.Exchange
 	rdb      outbound.RedisInterForWorkers
+	put      func(*domain.Exchange)
 	fallback chan<- *domain.Exchange
 	quit     chan struct{}
 }
 
-func (app *workerControl) initWorker(rdb outbound.RedisInterForWorkers, jobs <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) inbound.Worker {
+func (app *workerControl) initWorker(rdb outbound.RedisInterForWorkers, put func(*domain.Exchange), jobs <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) workerInter {
 	return &worker{
-		rdb:      rdb,
 		jobs:     jobs,
+		rdb:      rdb,
+		put:      put,
 		quit:     make(chan struct{}),
 		fallback: fallBack,
 	}
@@ -36,6 +37,8 @@ func (w *worker) Start() {
 			err := w.rdb.Add(context.TODO(), ex)
 			if err != nil {
 				w.fallback <- ex
+			} else {
+				w.put(ex)
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package stream
+package streams
 
 import (
 	"log/slog"
@@ -11,7 +11,7 @@ import (
 func (s *streams) startStream(addr string) {
 	defer s.wg.Done()
 	for {
-		strm, err := exchange.InitStream(addr)
+		strm, err := exchange.InitStream(addr, s.get)
 		if err != nil {
 			slog.Error("stream", "reconnecting", err)
 			time.Sleep(s.interval)
@@ -36,6 +36,6 @@ func (s *streams) startStream(addr string) {
 
 func (s *streams) mergeCh(ch <-chan *domain.Exchange) {
 	for ex := range ch {
-		s.outCh <- ex
+		s.collectCh <- ex
 	}
 }

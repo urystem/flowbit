@@ -1,4 +1,4 @@
-package inbound
+package workers
 
 import "context"
 
@@ -7,7 +7,7 @@ type WorkerPoolInter interface {
 	CleanAll()
 }
 
-type Worker interface {
+type workerInter interface {
 	Start()
 	Stop()
 }

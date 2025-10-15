@@ -27,7 +27,7 @@ func (s *stream) Subscribe(ctx context.Context) (<-chan *domain.Exchange, error)
 				s.mu.Unlock()
 				return
 			default:
-				ex := new(domain.Exchange)
+				ex := s.get()
 				if err := dec.Decode(ex); err != nil { //
 					// fmt.Println(err)
 					// slog.Error("", err)
