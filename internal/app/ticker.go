@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -20,12 +21,15 @@ func (app *myApp) timerOneMinute() {
 		case <-app.ctx.Done():
 			return
 		case <-timer.C:
-
-			avgs, err := app.red.GetAllAverages(app.ctx, int(from.UnixMilli()), int(next.UnixMilli()))
+			ctx, cancel := context.WithTimeout(app.ctx, 27*time.Second)
+			avgs, err := app.red.GetAllAverages(ctx, int(from.UnixMilli()), int(next.UnixMilli()))
+			cancel()
 			if err != nil {
 				slog.Error("ticker", "error:", err)
 			} else {
-				err = app.db.SaveWithCopyFrom(app.ctx, avgs, from)
+				ctx, cancel := context.WithTimeout(app.ctx, 27*time.Second)
+				err = app.db.SaveWithCopyFrom(ctx, avgs, from)
+				cancel()
 				if err != nil {
 					slog.Error("ticker", "psql", err)
 				} else {
