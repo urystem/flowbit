@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (db *poolDB) FallBack(ctx context.Context, exs []domain.Exchange) error {
+func (db *poolDB) FallBack(ctx context.Context, exs []*domain.Exchange) error {
 	rows := make([][]any, len(exs))
 	for i, v := range exs {
 		rows[i] = []any{

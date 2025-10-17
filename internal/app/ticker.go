@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"time"
 
-	"marketflow/internal/domain"
+	"marketflow/internal/services/fallback"
 )
 
-func (app *myApp) timerOneMinute() {
+func (app *myApp) timerOneMinute(fall fallback.WithoutCh) {
 	const interval = time.Minute
 	from := time.Now().Truncate(interval)
 	next := from.Add(interval) // ближайшая "ровная" минута
@@ -33,6 +33,7 @@ func (app *myApp) timerOneMinute() {
 				if err != nil {
 					slog.Error("ticker", "psql", err)
 				} else {
+					fmt.Println(avgs)
 					slog.Info("saved to sql")
 				}
 			}
@@ -43,15 +44,15 @@ func (app *myApp) timerOneMinute() {
 	}
 }
 
-func (app *myApp) tickerToCheckFallBack() {
-	batch := make([]domain.Exchange, 0, 512)
+// func (app *myApp) tickerToCheckFallBack() {
+// 	batch := make([]domain.Exchange, 0, 512)
 
-	for ex := range app.fallBack {
+// 	for ex := range app.fallBack {
 
-		batch = append(batch, *ex)
-		if len(batch) == 512 {
-			fmt.Println("batched")
-			batch = batch[:0]
-		}
-	}
-}
+// 		batch = append(batch, *ex)
+// 		if len(batch) == 512 {
+// 			fmt.Println("batched")
+// 			batch = batch[:0]
+// 		}
+// 	}
+// }

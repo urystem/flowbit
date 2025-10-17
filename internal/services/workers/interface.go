@@ -1,9 +1,13 @@
 package workers
 
-import "context"
+import (
+	"context"
+
+	"marketflow/internal/domain"
+)
 
 type WorkerPoolInter interface {
-	Start(ctx context.Context)
+	Start(ctx context.Context, fall chan<- *domain.Exchange)
 	CleanAll()
 }
 

@@ -30,20 +30,21 @@ type workerControl struct {
 	fallBack       chan<- *domain.Exchange
 }
 
-func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, put func(*domain.Exchange), ex <-chan *domain.Exchange, fallBack chan<- *domain.Exchange) WorkerPoolInter {
+func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, put func(*domain.Exchange), ex <-chan *domain.Exchange) WorkerPoolInter {
 	return &workerControl{
 		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
 		elastic:        cfg.GetBoolElasticWorker(),
 		rdb:            rdb,
 		put:            put,
 		ex:             ex,
-		fallBack:       fallBack,
-		interval:       cfg.GetElasticInterval(),
+		// fallBack:       fallBack,
+		interval: cfg.GetElasticInterval(),
 	}
 }
 
-func (wc *workerControl) Start(ctx context.Context) {
+func (wc *workerControl) Start(ctx context.Context, fallBack chan<- *domain.Exchange) {
 	wc.ctx = ctx
+	wc.fallBack = fallBack
 	for range wc.maxOrDefWorker {
 		wc.addWorker()
 	}

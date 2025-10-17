@@ -7,9 +7,9 @@ import (
 
 	"marketflow/internal/adapters/driven/postgres"
 	"marketflow/internal/adapters/driven/redis"
-	"marketflow/internal/domain"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
+	"marketflow/internal/services/fallback"
 	"marketflow/internal/services/streams"
 	"marketflow/internal/services/workers"
 
@@ -24,7 +24,6 @@ type myApp struct {
 	red            outbound.RedisInterGlogal
 	workers        workers.WorkerPoolInter
 	db             outbound.PgxInter
-	fallBack       chan *domain.Exchange
 	// srv            inbound.ServerInter // for init and for run
 }
 
@@ -43,15 +42,14 @@ func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, err
 		return nil, err
 	}
 	app.red = myRed
-	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), app.red, strm.ReturnPutFunc(), colectCh, app.fallBack)
 
 	myDB, err := postgres.InitDB(app.ctx, cfg.GetDBConfig())
 	if err != nil {
 		return nil, err
 	}
-
 	app.db = myDB
-	app.fallBack = make(chan *domain.Exchange, 512)
+	// fallBack := fallback.Fallback(myDB, myRed, strm.ReturnPutFunc())
+	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), app.red, strm.ReturnPutFunc(), colectCh)
 	return app, nil
 }
 
@@ -75,10 +73,11 @@ func (app *myApp) Shutdown(ctx context.Context) error {
 
 func (app *myApp) Run() error {
 	slog.Info("server starting")
+	fallB := fallback.NewFallback(app.ctx, app.db, app.red, app.strm.ReturnPutFunc())
 	app.strm.StartStreams(app.ctx)
-	app.workers.Start(app.ctx)
-	go app.timerOneMinute()
-	go app.tickerToCheckFallBack()
+	app.workers.Start(app.ctx, fallB.GoAndReturnCh())
+	go app.timerOneMinute(fallB)
+	// go app.tickerToCheckFallBack()
 	// time.Sleep(10 * time.Second)
 	// res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
 	// res, err := app.red.GetAvarages(context.TODO())

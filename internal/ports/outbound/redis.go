@@ -12,8 +12,13 @@ type RedisInterForWorkers interface {
 
 type RedisInterGlogal interface {
 	// GetAndDelRandomCharacter(ctx context.Context) (*domain.Character, error)
+	RedisChecker
 	RedisInterForWorkers
 	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
 	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 	CloseRedis() error
+}
+
+type RedisChecker interface {
+	CheckHealth(ctx context.Context) error
 }
