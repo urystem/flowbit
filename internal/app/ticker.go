@@ -6,10 +6,11 @@ import (
 	"log/slog"
 	"time"
 
-	"marketflow/internal/services/fallback"
+	"marketflow/internal/services/batcher"
 )
 
-func (app *myApp) timerOneMinute(fall fallback.WithoutCh) {
+// fall керек емес сияктыгой
+func (app *myApp) timerOneMinute(fall batcher.InsertAndStatus) {
 	const interval = time.Minute
 	from := time.Now().Truncate(interval)
 	next := from.Add(interval) // ближайшая "ровная" минута

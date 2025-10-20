@@ -16,10 +16,10 @@ type streams struct {
 	collectCh chan *domain.Exchange // all
 	interval  time.Duration
 	start     chan struct{}
-	pool      sync.Pool
+	pool      sync.Pool // allocator
 }
 
-func InitStreams(cfg config.SourcesCfg) (StreamsInter, <-chan *domain.Exchange, error) {
+func InitStreams(cfg config.SourcesCfg) (StreamsInter, error) {
 	strm := &streams{
 		collectCh: make(chan *domain.Exchange, 128),
 		start:     make(chan struct{}),
@@ -37,7 +37,7 @@ func InitStreams(cfg config.SourcesCfg) (StreamsInter, <-chan *domain.Exchange, 
 		go strm.startStream(addr)
 	}
 
-	return strm, strm.collectCh, nil
+	return strm, nil
 }
 
 func (s *streams) StartStreams(ctx context.Context) {
@@ -58,4 +58,8 @@ func (s *streams) ReturnPutFunc() func(*domain.Exchange) {
 	return func(ex *domain.Exchange) {
 		s.pool.Put(ex)
 	}
+}
+
+func (s *streams) ReturnCh() <-chan *domain.Exchange {
+	return s.collectCh
 }

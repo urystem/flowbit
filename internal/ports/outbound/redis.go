@@ -15,10 +15,14 @@ type RedisInterGlogal interface {
 	RedisChecker
 	RedisInterForWorkers
 	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
-	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 	CloseRedis() error
+	RedisForOne
 }
 
 type RedisChecker interface {
 	CheckHealth(ctx context.Context) error
+}
+
+type RedisForOne interface {
+	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 }

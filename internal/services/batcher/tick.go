@@ -1,11 +1,11 @@
-package fallback
+package batcher
 
 import (
 	"log/slog"
 	"time"
 )
 
-func (f *myFallback) goFunc() {
+func (f *batchCollector) goFunc() {
 	defer close(f.channel)
 	defer close(f.working)
 	for {
@@ -16,10 +16,11 @@ func (f *myFallback) goFunc() {
 		case <-f.ctx.Done():
 			return
 		case <-f.working:
+			f.switcherNotWoring(false)
 			go f.workingSleepToDone()
 		case ex := <-f.channel:
 			if !f.sendedSignalNotWorking {
-				f.sendedSignalNotWorking = true
+				f.switcherNotWoring(true)
 				slog.Info("redis not working")
 				go f.ticker()
 			}
@@ -28,7 +29,7 @@ func (f *myFallback) goFunc() {
 	}
 }
 
-func (f *myFallback) ticker() {
+func (f *batchCollector) ticker() {
 	ti := time.NewTicker(5 * time.Second)
 	defer ti.Stop()
 	for {
@@ -45,9 +46,14 @@ func (f *myFallback) ticker() {
 	}
 }
 
-func (f *myFallback) workingSleepToDone() {
+func (f *batchCollector) workingSleepToDone() {
 	time.Sleep(5 * time.Second) // wait for channel
 	f.InsertBatches()
-	f.sendedSignalNotWorking = false
-	slog.Info("redis working")
+	slog.Info("redis working and batched to sql of fallback channel")
+}
+
+func (f *batchCollector) switcherNotWoring(b bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+	f.sendedSignalNotWorking = b
 }

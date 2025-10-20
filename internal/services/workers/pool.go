@@ -7,15 +7,10 @@ import (
 	"time"
 
 	"marketflow/internal/config"
-	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
+	"marketflow/internal/services/batcher"
+	"marketflow/internal/services/streams"
 )
-
-var allocator = sync.Pool{
-	New: func() any {
-		return new(domain.Exchange)
-	},
-}
 
 type workerControl struct {
 	ctx            context.Context
@@ -25,26 +20,23 @@ type workerControl struct {
 	interval       time.Duration
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
-	put            func(*domain.Exchange)
-	ex             <-chan *domain.Exchange
-	fallBack       chan<- *domain.Exchange
+	strm           streams.StreamForWorker
+	batch          batcher.StatusAndFallback
 }
 
-func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, put func(*domain.Exchange), ex <-chan *domain.Exchange) WorkerPoolInter {
+func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, strm streams.StreamForWorker) WorkerPoolInter {
 	return &workerControl{
 		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
 		elastic:        cfg.GetBoolElasticWorker(),
 		rdb:            rdb,
-		put:            put,
-		ex:             ex,
-		// fallBack:       fallBack,
-		interval: cfg.GetElasticInterval(),
+		strm:           strm,
+		interval:       cfg.GetElasticInterval(),
 	}
 }
 
-func (wc *workerControl) Start(ctx context.Context, fallBack chan<- *domain.Exchange) {
+func (wc *workerControl) Start(ctx context.Context, rdbStatusAndBatch batcher.StatusAndFallback) {
 	wc.ctx = ctx
-	wc.fallBack = fallBack
+	wc.batch = rdbStatusAndBatch
 	for range wc.maxOrDefWorker {
 		wc.addWorker()
 	}
@@ -54,17 +46,15 @@ func (wc *workerControl) Start(ctx context.Context, fallBack chan<- *domain.Exch
 }
 
 func (wc *workerControl) CleanAll() { // STOP
-	// for range wc.workers {
-	// 	wc.removeWorker()
-	// }
+	defer slog.Info("Stop workers ", "count:", len(wc.workers))
+	defer wc.wg.Wait()
 	for _, w := range wc.workers {
 		go w.Stop()
 	}
-	wc.wg.Wait()
 }
 
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.rdb, wc.put, wc.ex, wc.fallBack)
+	w := wc.initWorker(wc.strm, wc.rdb, wc.batch)
 	wc.workers = append(wc.workers, w)
 	wc.wg.Go(w.Start)
 	slog.Info("⚡ Added worker", "total:", len(wc.workers))
@@ -80,12 +70,13 @@ func (wc *workerControl) removeWorker() {
 func (wc *workerControl) elasTicker() {
 	ticker := time.NewTicker(wc.interval)
 	defer ticker.Stop()
+	ch := wc.strm.ReturnCh()
 	for {
 		select {
 		case <-wc.ctx.Done():
 			return
 		case <-ticker.C:
-			kanallen := len(wc.ex)
+			kanallen := len(ch)
 			wlen := len(wc.workers)
 			if kanallen == 0 && wlen > 1 { // for panic
 				wc.removeWorker()

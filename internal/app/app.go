@@ -9,7 +9,7 @@ import (
 	"marketflow/internal/adapters/driven/redis"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
-	"marketflow/internal/services/fallback"
+	"marketflow/internal/services/batcher"
 	"marketflow/internal/services/streams"
 	"marketflow/internal/services/workers"
 
@@ -20,9 +20,9 @@ import (
 type myApp struct {
 	ctx            context.Context
 	ctxCancelCause context.CancelCauseFunc
-	strm           streams.StreamsInter
+	strm           streams.StreamsInter // service
 	red            outbound.RedisInterGlogal
-	workers        workers.WorkerPoolInter
+	workers        workers.WorkerPoolInter // service
 	db             outbound.PgxInter
 	// srv            inbound.ServerInter // for init and for run
 }
@@ -30,7 +30,7 @@ type myApp struct {
 func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, error) {
 	app := &myApp{}
 	app.ctx, app.ctxCancelCause = context.WithCancelCause(ctx)
-	strm, colectCh, err := streams.InitStreams(cfg.GetSourcesCfg())
+	strm, err := streams.InitStreams(cfg.GetSourcesCfg())
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, err
 	}
 	app.db = myDB
 	// fallBack := fallback.Fallback(myDB, myRed, strm.ReturnPutFunc())
-	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), app.red, strm.ReturnPutFunc(), colectCh)
+	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), app.red, strm)
 	return app, nil
 }
 
@@ -73,9 +73,9 @@ func (app *myApp) Shutdown(ctx context.Context) error {
 
 func (app *myApp) Run() error {
 	slog.Info("server starting")
-	fallB := fallback.NewFallback(app.ctx, app.db, app.red, app.strm.ReturnPutFunc())
+	fallB := batcher.NewBatchCollector(app.ctx, app.db, app.red, app.strm.ReturnPutFunc())
 	app.strm.StartStreams(app.ctx)
-	app.workers.Start(app.ctx, fallB.GoAndReturnCh())
+	app.workers.Start(app.ctx, fallB)
 	go app.timerOneMinute(fallB)
 	// go app.tickerToCheckFallBack()
 	// time.Sleep(10 * time.Second)

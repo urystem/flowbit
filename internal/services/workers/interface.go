@@ -3,11 +3,11 @@ package workers
 import (
 	"context"
 
-	"marketflow/internal/domain"
+	"marketflow/internal/services/batcher"
 )
 
 type WorkerPoolInter interface {
-	Start(ctx context.Context, fall chan<- *domain.Exchange)
+	Start(ctx context.Context, batch batcher.StatusAndFallback)
 	CleanAll()
 }
 
