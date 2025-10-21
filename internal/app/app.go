@@ -10,6 +10,7 @@ import (
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 	"marketflow/internal/services/batcher"
+	"marketflow/internal/services/one"
 	"marketflow/internal/services/streams"
 	"marketflow/internal/services/workers"
 
@@ -73,10 +74,11 @@ func (app *myApp) Shutdown(ctx context.Context) error {
 
 func (app *myApp) Run() error {
 	slog.Info("server starting")
+	oneMin := one.NewTimerOneMinute(app.red, app.db)
 	fallB := batcher.NewBatchCollector(app.ctx, app.db, app.red, app.strm.ReturnPutFunc())
 	app.strm.StartStreams(app.ctx)
 	app.workers.Start(app.ctx, fallB)
-	go app.timerOneMinute(fallB)
+	// go app.timerOneMinute(fallB)
 	// go app.tickerToCheckFallBack()
 	// time.Sleep(10 * time.Second)
 	// res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа

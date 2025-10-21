@@ -1,6 +1,7 @@
 package batcher
 
 import (
+	"context"
 	"log/slog"
 
 	"marketflow/internal/domain"
@@ -12,13 +13,11 @@ func (f *batchCollector) GoAndReturnCh() chan<- *domain.Exchange {
 }
 
 func (f *batchCollector) IsNotWorking() bool {
-	f.mutex.RLock()
-	defer f.mutex.RUnlock()
-	return f.sendedSignalNotWorking
+	return f.notWorking.Load()
 }
 
-func (f *batchCollector) InsertBatches() error {
-	err := f.sql.FallBack(f.ctx, f.batch)
+func (f *batchCollector) InsertBatches(ctx context.Context) error {
+	err := f.sql.FallBack(ctx, f.batch)
 	if err != nil {
 		slog.Error("fallback", "sql потеря данных", err)
 	} else {
@@ -30,3 +29,4 @@ func (f *batchCollector) InsertBatches() error {
 	f.batch = f.batch[:0]
 	return err
 }
+

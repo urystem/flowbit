@@ -10,7 +10,7 @@ func (f *batchCollector) goFunc() {
 	defer close(f.working)
 	for {
 		if len(f.batch) > 511 {
-			f.InsertBatches()
+			f.InsertBatches(f.ctx)
 		}
 		select {
 		case <-f.ctx.Done():
@@ -19,7 +19,7 @@ func (f *batchCollector) goFunc() {
 			f.switcherNotWoring(false)
 			go f.workingSleepToDone()
 		case ex := <-f.channel:
-			if !f.sendedSignalNotWorking {
+			if !f.IsNotWorking() {
 				f.switcherNotWoring(true)
 				slog.Info("redis not working")
 				go f.ticker()
@@ -48,12 +48,10 @@ func (f *batchCollector) ticker() {
 
 func (f *batchCollector) workingSleepToDone() {
 	time.Sleep(5 * time.Second) // wait for channel
-	f.InsertBatches()
+	f.InsertBatches(f.ctx)
 	slog.Info("redis working and batched to sql of fallback channel")
 }
 
 func (f *batchCollector) switcherNotWoring(b bool) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-	f.sendedSignalNotWorking = b
+	f.notWorking.Store(b)
 }

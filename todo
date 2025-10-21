@@ -84,3 +84,10 @@ func (batcher.statusRedisSynced) IsNotWorking() bool
 функциялар one 5а керек емес сияктыгой, ол ози редистен де sql ден де алады
 редис ошип калган болса, 1 рет skip жасап сол уакты сактап алу керек
 skip болган болса онда statusRedisSynced ты one minute сервис доступ беру керек
+
+
+import "sync/atomic"
+
+var ready atomic.Bool
+kerek
+

@@ -1,6 +1,10 @@
 package batcher
 
-import "marketflow/internal/domain"
+import (
+	"context"
+
+	"marketflow/internal/domain"
+)
 
 type FallBackInter interface {
 	insertBatch
@@ -23,7 +27,8 @@ type statusRedisSynced interface {
 }
 
 type insertBatch interface {
-	InsertBatches() error
+	InsertBatches(context.Context) error
+	// GetSignal() <-chan struct{}
 }
 
 type returnCh interface {

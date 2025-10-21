@@ -15,6 +15,7 @@ type PgxInter interface {
 }
 
 type PgxForTimer interface {
+	GetAverageAndDelete(ctx context.Context, from, to time.Time) ([]domain.ExchangeAggregation, error)
 	SaveWithCopyFrom(ctx context.Context, avgs []domain.ExchangeAggregation, ti time.Time) error
 }
 
