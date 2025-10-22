@@ -4,11 +4,13 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"marketflow/internal/config"
+	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
-	"marketflow/internal/services/batcher"
+	"marketflow/internal/services/one"
 	"marketflow/internal/services/streams"
 )
 
@@ -21,7 +23,9 @@ type workerControl struct {
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
 	strm           streams.StreamForWorker
-	batch          batcher.StatusAndFallback
+	one            one.OneMinuteStatus
+	fallCh         chan *domain.Exchange
+	closedFallCh   atomic.Bool
 }
 
 func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, strm streams.StreamForWorker) WorkerPoolInter {
@@ -31,12 +35,13 @@ func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, strm s
 		rdb:            rdb,
 		strm:           strm,
 		interval:       cfg.GetElasticInterval(),
+		fallCh:         make(chan *domain.Exchange, 64),
 	}
 }
 
-func (wc *workerControl) Start(ctx context.Context, rdbStatusAndBatch batcher.StatusAndFallback) {
+func (wc *workerControl) Start(ctx context.Context, rdbStatusAndBatch one.OneMinuteStatus) {
 	wc.ctx = ctx
-	wc.batch = rdbStatusAndBatch
+	wc.one = rdbStatusAndBatch
 	for range wc.maxOrDefWorker {
 		wc.addWorker()
 	}
@@ -46,15 +51,32 @@ func (wc *workerControl) Start(ctx context.Context, rdbStatusAndBatch batcher.St
 }
 
 func (wc *workerControl) CleanAll() { // STOP
+	if wc.closedFallCh.Load() {
+		return
+	}
 	defer slog.Info("Stop workers ", "count:", len(wc.workers))
 	defer wc.wg.Wait()
+	defer close(wc.fallCh)
+	defer wc.closedFallCh.Store(true)
 	for _, w := range wc.workers {
 		go w.Stop()
 	}
 }
 
+func (wc *workerControl) ReturnChReadOnly() <-chan *domain.Exchange {
+	return wc.fallCh
+}
+
+func (wc *workerControl) giveAsFall(ex *domain.Exchange) {
+	if wc.closedFallCh.Load() {
+		slog.Error("wtf")
+		return
+	}
+	wc.fallCh <- ex
+}
+
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.strm, wc.rdb, wc.batch)
+	w := wc.initWorker(wc.strm, wc.rdb, wc.one, wc.giveAsFall)
 	wc.workers = append(wc.workers, w)
 	wc.wg.Go(w.Start)
 	slog.Info("⚡ Added worker", "total:", len(wc.workers))
@@ -74,6 +96,7 @@ func (wc *workerControl) elasTicker() {
 	for {
 		select {
 		case <-wc.ctx.Done():
+			wc.CleanAll()
 			return
 		case <-ticker.C:
 			kanallen := len(ch)

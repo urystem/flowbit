@@ -13,6 +13,10 @@ type StreamsInter interface {
 }
 
 type StreamForWorker interface {
-	ReturnPutFunc() func(*domain.Exchange)
+	StreamsPutter
 	ReturnCh() <-chan *domain.Exchange
+}
+
+type StreamsPutter interface {
+	ReturnPutFunc() func(*domain.Exchange)
 }

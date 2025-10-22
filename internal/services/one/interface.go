@@ -1,18 +1,12 @@
 package one
 
-import (
-	"context"
-
-	"marketflow/internal/services/batcher"
-)
+import "context"
 
 type OneMinuteGlobalInter interface {
-	RunWithGo(ctx context.Context, batcher batcher.InsertAndStatus)
-	OneMinuteForBatcher
+	Run(ctx context.Context) error
+	OneMinuteStatus
 }
 
-type OneMinuteForBatcher interface {
-	CheckNotAllow() bool
-	WasError()
-	CollectOldsAndSetAllow(ctx context.Context) error
+type OneMinuteStatus interface {
+	IsNotWorking() bool
 }

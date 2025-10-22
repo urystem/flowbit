@@ -3,31 +3,33 @@ package workers
 import (
 	"context"
 
+	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
-	"marketflow/internal/services/batcher"
+	"marketflow/internal/services/one"
 	"marketflow/internal/services/streams"
 )
 
 type worker struct {
-	strm  streams.StreamForWorker
-	rdb   outbound.RedisInterForWorkers
-	batch batcher.StatusAndFallback
-	quit  chan struct{}
+	strm streams.StreamForWorker
+	rdb  outbound.RedisInterForWorkers
+	one  one.OneMinuteStatus
+	fall func(*domain.Exchange)
+	quit chan struct{}
 }
 
-func (app *workerControl) initWorker(strm streams.StreamForWorker, rdb outbound.RedisInterForWorkers, batch batcher.StatusAndFallback) workerInter {
+func (app *workerControl) initWorker(strm streams.StreamForWorker, rdb outbound.RedisInterForWorkers, one one.OneMinuteStatus, fallWrite func(*domain.Exchange)) workerInter {
 	return &worker{
-		strm:  strm,
-		rdb:   rdb,
-		batch: batch,
-		quit:  make(chan struct{}),
+		strm: strm,
+		rdb:  rdb,
+		one:  one,
+		fall: fallWrite,
+		quit: make(chan struct{}),
 	}
 }
 
 func (w *worker) Start() {
 	jobs := w.strm.ReturnCh()
 	put := w.strm.ReturnPutFunc()
-	fall := w.batch.GoAndReturnCh()
 	for {
 		select {
 		case <-w.quit:
@@ -36,15 +38,15 @@ func (w *worker) Start() {
 			if !ok {
 				return // канал закрыт
 			}
-			if !w.batch.IsNotWorking() {
+			if !w.one.IsNotWorking() {
 				err := w.rdb.Add(context.TODO(), ex)
 				if err != nil {
-					fall <- ex
+					w.fall(ex)
 				} else {
 					put(ex)
 				}
 			} else {
-				fall <- ex
+				w.fall(ex)
 			}
 		}
 	}
