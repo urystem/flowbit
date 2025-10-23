@@ -51,7 +51,7 @@ func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, err
 
 	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), myRed, myStrm)
 
-	app.one = one.NewTimerOneMinute(myRed, myDB, app.strm.ReturnCh(), myStrm)
+	app.one = one.NewTimerOneMinute(myRed, myDB, app.workers.ReturnChReadOnly(), myStrm)
 	return app, nil
 }
 

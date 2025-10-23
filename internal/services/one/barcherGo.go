@@ -15,11 +15,15 @@ func (one *oneMinute) goFuncBatcher() {
 		select {
 		case <-one.ctx.Done():
 			return
+		case <-one.working:
+			fmt.Println("redis worked")
+			one.insertBatches()
 		case ex := <-one.channel:
-			if !one.IsNotWorking() {
-				one.notWorking.Store(true)
-				one.wasErrInMinute.Store(true)
-				slog.Info("redis not working")
+			if !one.knowWasErr.Load() {
+				one.knowWasErr.Store(true)     // for batcher for this
+				one.notWorking.Store(true)     // for workers
+				one.wasErrInMinute.Store(true) // fo one minute
+				slog.Info("redis not working now")
 				go one.tryReconnect()
 			}
 			one.batch = append(one.batch, ex)
@@ -42,14 +46,19 @@ func (one *oneMinute) tryReconnect() {
 					if err != nil {
 						slog.Error("one minute", "try collect old", err)
 					}
+					slog.Info("old data's average also saved")
+					one.wasErrInMinute.Store(true) // tagy 1 ret tekseru ushin,
 				}
-				one.notWorking.Store(false)
-				time.Sleep(5 * time.Second)
-				if one.IsNotWorking() {
-					slog.Error("redis unstable")
+				one.notWorking.Store(false) // give signal to workers
+				time.Sleep(2 * time.Second)
+				one.knowWasErr.Store(false) // give signal to batcher
+				time.Sleep(2 * time.Second)
+				if one.knowWasErr.Load() { // check again
+					slog.Error("redis is unstable, try ")
 					continue
 				}
-				one.insertBatches()
+				one.working <- struct{}{}
+
 				return
 			}
 		}

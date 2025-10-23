@@ -11,12 +11,14 @@ import (
 
 type oneMinute struct {
 	ctx            context.Context
-	notWorking     atomic.Bool  // real time
-	wasErrInMinute atomic.Bool  // there was error in this last minute
+	notWorking     atomic.Bool  // real time //for workers
+	knowWasErr     atomic.Bool  // access for switch//for batcher
+	wasErrInMinute atomic.Bool  // there was error in this last minute //for one minute
 	displaced      atomic.Int64 // was old data in redis and db (time)
 	red            outbound.RedisForOne
 	db             outbound.PgxForTimerAndBatcher
 	channel        <-chan *domain.Exchange // fallback
+	working        chan struct{}
 	batch          []*domain.Exchange
 	strm           streams.StreamsPutter
 }
@@ -26,6 +28,7 @@ func NewTimerOneMinute(red outbound.RedisForOne, db outbound.PgxForTimerAndBatch
 		red:     red, // redis
 		db:      db,  // sql
 		channel: ch,  // worker-pool
+		working: make(chan struct{}),
 		strm:    put, // stream
 	}
 }

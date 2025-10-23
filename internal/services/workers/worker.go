@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"log/slog"
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
@@ -38,9 +39,10 @@ func (w *worker) Start() {
 			if !ok {
 				return // канал закрыт
 			}
-			if !w.one.IsNotWorking() {
+			if !w.one.IsNotWorking() { // == working
 				err := w.rdb.Add(context.TODO(), ex)
 				if err != nil {
+					slog.Error("worker", "redis add error:", err)
 					w.fall(ex)
 				} else {
 					put(ex)
