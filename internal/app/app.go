@@ -12,6 +12,7 @@ import (
 	"marketflow/internal/ports/outbound"
 	"marketflow/internal/services/one"
 	"marketflow/internal/services/streams"
+	syncpool "marketflow/internal/services/syncPool"
 	"marketflow/internal/services/workers"
 )
 
@@ -29,12 +30,11 @@ type myApp struct {
 
 func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, error) {
 	app := &myApp{}
-	app.ctx, app.ctxCancelCause = context.WithCancelCause(ctx)
-	myStrm, err := streams.InitStreams(cfg.GetSourcesCfg())
+	getPut := syncpool.NewSyncPoolExchange()
+	myStrm, err := app.initStreamsService(cfg.GetSourcesCfg(), getPut)
 	if err != nil {
 		return nil, err
 	}
-
 	app.strm = myStrm
 
 	myRed, err := redis.InitRickRedis(ctx, cfg.GetRedisConfig())
@@ -49,9 +49,9 @@ func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, err
 	}
 	app.db = myDB
 
-	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), myRed, myStrm)
+	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), myRed, getPut, myStrm.ReturnCh())
 
-	app.one = one.NewTimerOneMinute(myRed, myDB, app.workers.ReturnChReadOnly(), myStrm)
+	app.one = one.NewTimerOneMinute(myRed, myDB, app.workers.ReturnChReadOnly(), getPut)
 	return app, nil
 }
 

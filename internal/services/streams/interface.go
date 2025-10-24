@@ -7,16 +7,10 @@ import (
 )
 
 type StreamsInter interface {
-	StartStreams(ctx context.Context)
+	StartStreams(ctx context.Context) error
 	StopStreams()
-	StreamForWorker
-}
-
-type StreamForWorker interface {
-	StreamsPutter
+	StopJustStreams()
+	StopTestStream()
+	StartTestStream(ctx context.Context) error
 	ReturnCh() <-chan *domain.Exchange
-}
-
-type StreamsPutter interface {
-	ReturnPutFunc() func(*domain.Exchange)
 }

@@ -7,35 +7,36 @@ import (
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
 	"marketflow/internal/services/one"
-	"marketflow/internal/services/streams"
+	syncpool "marketflow/internal/services/syncPool"
 )
 
 type worker struct {
-	strm streams.StreamForWorker
-	rdb  outbound.RedisInterForWorkers
-	one  one.OneMinuteStatus
-	fall func(*domain.Exchange)
-	quit chan struct{}
+	job    <-chan *domain.Exchange
+	rdb    outbound.RedisInterForWorkers
+	one    one.OneMinuteStatus
+	putter syncpool.Putter
+	fall   func(*domain.Exchange)
+	quit   chan struct{}
 }
 
-func (app *workerControl) initWorker(strm streams.StreamForWorker, rdb outbound.RedisInterForWorkers, one one.OneMinuteStatus, fallWrite func(*domain.Exchange)) workerInter {
+func (app *workerControl) initWorker(job <-chan *domain.Exchange, rdb outbound.RedisInterForWorkers, one one.OneMinuteStatus, putter syncpool.Putter, fallWrite func(*domain.Exchange)) workerInter {
 	return &worker{
-		strm: strm,
-		rdb:  rdb,
-		one:  one,
-		fall: fallWrite,
-		quit: make(chan struct{}),
+		job:    job,
+		rdb:    rdb,
+		one:    one,
+		putter: putter,
+		fall:   fallWrite,
+		quit:   make(chan struct{}),
 	}
 }
 
 func (w *worker) Start() {
-	jobs := w.strm.ReturnCh()
-	put := w.strm.ReturnPutFunc()
+	put := w.putter.GetFuncExchange()
 	for {
 		select {
 		case <-w.quit:
 			return
-		case ex, ok := <-jobs:
+		case ex, ok := <-w.job:
 			if !ok {
 				return // канал закрыт
 			}

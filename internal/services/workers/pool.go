@@ -11,29 +11,31 @@ import (
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
 	"marketflow/internal/services/one"
-	"marketflow/internal/services/streams"
+	syncpool "marketflow/internal/services/syncPool"
 )
 
 type workerControl struct {
 	ctx            context.Context
 	wg             sync.WaitGroup
 	workers        []workerInter
+	putter         syncpool.Putter
 	maxOrDefWorker int
 	interval       time.Duration
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
-	strm           streams.StreamForWorker
+	job            <-chan *domain.Exchange // from streams
 	one            one.OneMinuteStatus
 	fallCh         chan *domain.Exchange
 	closedFallCh   atomic.Bool
 }
 
-func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, strm streams.StreamForWorker) WorkerPoolInter {
+func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, putter syncpool.Putter, job <-chan *domain.Exchange) WorkerPoolInter {
 	return &workerControl{
 		maxOrDefWorker: cfg.GetCountOfMaxOrDefWorker(),
 		elastic:        cfg.GetBoolElasticWorker(),
+		putter:         putter,
 		rdb:            rdb,
-		strm:           strm,
+		job:            job,
 		interval:       cfg.GetElasticInterval(),
 		fallCh:         make(chan *domain.Exchange, 64),
 	}
@@ -76,7 +78,7 @@ func (wc *workerControl) giveAsFall(ex *domain.Exchange) {
 }
 
 func (wc *workerControl) addWorker() {
-	w := wc.initWorker(wc.strm, wc.rdb, wc.one, wc.giveAsFall)
+	w := wc.initWorker(wc.job, wc.rdb, wc.one, wc.putter, wc.giveAsFall)
 	wc.workers = append(wc.workers, w)
 	wc.wg.Go(w.Start)
 	slog.Info("⚡ Added worker", "total:", len(wc.workers))
@@ -92,14 +94,13 @@ func (wc *workerControl) removeWorker() {
 func (wc *workerControl) elasTicker() {
 	ticker := time.NewTicker(wc.interval)
 	defer ticker.Stop()
-	ch := wc.strm.ReturnCh()
 	for {
 		select {
 		case <-wc.ctx.Done():
 			wc.CleanAll()
 			return
 		case <-ticker.C:
-			kanallen := len(ch)
+			kanallen := len(wc.job)
 			wlen := len(wc.workers)
 			if kanallen == 0 && wlen > 1 { // for panic
 				wc.removeWorker()

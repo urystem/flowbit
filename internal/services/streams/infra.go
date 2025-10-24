@@ -2,62 +2,67 @@ package streams
 
 import (
 	"context"
+	"fmt"
 	"sync"
-	"time"
+	"sync/atomic"
 
-	"marketflow/internal/config"
 	"marketflow/internal/domain"
+	"marketflow/internal/ports/outbound"
+	syncpool "marketflow/internal/services/syncPool"
 )
 
 type streams struct {
-	ctx       context.Context // for all 3 exchanes
-	cancel    context.CancelFunc
-	wg        sync.WaitGroup        // 3
-	collectCh chan *domain.Exchange // all
-	interval  time.Duration
-	start     chan struct{}
-	pool      sync.Pool // allocator
+	ctxStrm      context.Context
+	cancelStream context.CancelFunc
+	ctxTest      context.Context
+	cancelTest   context.CancelFunc
+	strms        []outbound.StreamAdapterInter
+	wg           sync.WaitGroup        // 3
+	collectCh    chan *domain.Exchange // all
+	closedCh     atomic.Bool
+	getter       syncpool.Getter // for generator
 }
 
-func InitStreams(cfg config.SourcesCfg) (StreamsInter, error) {
-	strm := &streams{
-		collectCh: make(chan *domain.Exchange, 128),
-		start:     make(chan struct{}),
-		interval:  cfg.GetInterval(),
-		pool: sync.Pool{
-			New: func() any {
-				return new(domain.Exchange)
-			},
-		},
+func InitStreams(strms []outbound.StreamAdapterInter, getter syncpool.Getter) StreamsInter {
+	return &streams{
+		strms:     strms,
+		collectCh: make(chan *domain.Exchange, 64),
+		getter:    getter,
 	}
+}
 
-	for _, addr := range cfg.GetAddresses() {
-		strm.wg.Add(1)
-		// бул жерде sunc.Waitgroup.Go функция болмайды ол тек func() кабылдайды
-		go strm.startStream(addr)
+func (s *streams) StartStreams(ctx context.Context) error {
+	if s.ctxStrm != nil && s.ctxStrm.Err() == nil {
+		return fmt.Errorf("%s", "already running")
+	} else if s.closedCh.Load() {
+		return fmt.Errorf("%s", "channel closed")
 	}
-
-	return strm, nil
+	s.ctxStrm, s.cancelStream = context.WithCancel(ctx)
+	for _, strm := range s.strms {
+		s.wg.Add(1)
+		go s.mergeCh(strm.Subscribe(s.ctxStrm))
+	}
+	return nil
 }
 
-func (s *streams) StartStreams(ctx context.Context) {
-	s.ctx, s.cancel = context.WithCancel(ctx)
-	close(s.start)
+func (s *streams) mergeCh(ch <-chan *domain.Exchange) {
+	defer s.wg.Done()
+	for ex := range ch {
+		s.collectCh <- ex
+	}
 }
 
-func (s *streams) StopStreams() {
-	s.cancel()
+func (s *streams) StopJustStreams() {
+	if s.cancelStream != nil {
+		s.cancelStream()
+	}
 	s.wg.Wait()
 }
 
-func (s *streams) get() *domain.Exchange {
-	return s.pool.Get().(*domain.Exchange)
-}
-
-func (s *streams) ReturnPutFunc() func(*domain.Exchange) {
-	return func(ex *domain.Exchange) {
-		s.pool.Put(ex)
-	}
+func (s *streams) StopStreams() {
+	s.closedCh.Store(true)
+	s.StopJustStreams()
+	close(s.collectCh)
 }
 
 func (s *streams) ReturnCh() <-chan *domain.Exchange {

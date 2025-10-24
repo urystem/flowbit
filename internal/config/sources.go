@@ -7,21 +7,20 @@ import (
 )
 
 type sources struct {
-	address []string
-	interv  time.Duration
+	hostAdrr map[string]string
+	interv   time.Duration
 }
 type SourcesCfg interface {
 	// GetPort(host string) uint16
 	// GetCountWorkers() uint8
 	GetInterval() time.Duration
-	GetAddresses() []string
+	GetAddresses() map[string]string
 	// GetCountOfAllWorkers() uint16
 }
 
 func (c *config) initSources() sources {
 	second := mustGetEnvInt("MARKET_INTERVAL")
 	if second < 1 || second > 60 {
-		// slog.Error("ss")
 		panic("ss")
 	}
 
@@ -32,6 +31,7 @@ func (c *config) initSources() sources {
 	lenAddr := len(addrSlc)
 	checkHost := make(map[string]struct{}, lenAddr)
 	checkPort := make(map[uint16]struct{}, lenAddr)
+	hostAddr := make(map[string]string)
 	for i := range addrSlc {
 		address := strings.Split(addrSlc[i], ":")
 		if len(address) != 2 {
@@ -45,7 +45,7 @@ func (c *config) initSources() sources {
 		}
 		checkHost[hostStr] = struct{}{}
 		checkPort[uint16(port)] = struct{}{}
-		addrSlc[i] = hostStr + ":" + portStr
+		hostAddr[hostStr] = hostStr + ":" + portStr
 	}
 
 	if lenAddr != len(checkHost) {
@@ -54,11 +54,11 @@ func (c *config) initSources() sources {
 		panic("duplicated port")
 	}
 	return sources{
-		address: addrSlc,
-		interv:  time.Duration(second) * time.Second,
+		hostAdrr: hostAddr,
+		interv:   time.Duration(second) * time.Second,
 	}
 }
 
-func (s *sources) GetAddresses() []string { return s.address }
+func (s *sources) GetAddresses() map[string]string { return s.hostAdrr }
 
 func (s *sources) GetInterval() time.Duration { return s.interv }

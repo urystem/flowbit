@@ -72,7 +72,7 @@ func (one *oneMinute) insertBatches() error {
 	} else {
 		slog.Info("batched")
 	}
-	putB := one.strm.ReturnPutFunc()
+	putB := one.putter.GetFuncExchange()
 	for i := range one.batch {
 		putB(one.batch[i])
 	}

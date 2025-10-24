@@ -6,7 +6,7 @@ import (
 
 	"marketflow/internal/domain"
 	"marketflow/internal/ports/outbound"
-	"marketflow/internal/services/streams"
+	syncpool "marketflow/internal/services/syncPool"
 )
 
 type oneMinute struct {
@@ -20,16 +20,16 @@ type oneMinute struct {
 	channel        <-chan *domain.Exchange // fallback
 	working        chan struct{}
 	batch          []*domain.Exchange
-	strm           streams.StreamsPutter
+	putter         syncpool.Putter
 }
 
-func NewTimerOneMinute(red outbound.RedisForOne, db outbound.PgxForTimerAndBatcher, ch <-chan *domain.Exchange, put streams.StreamsPutter) OneMinuteGlobalInter {
+func NewTimerOneMinute(red outbound.RedisForOne, db outbound.PgxForTimerAndBatcher, ch <-chan *domain.Exchange, putter syncpool.Putter) OneMinuteGlobalInter {
 	return &oneMinute{
 		red:     red, // redis
 		db:      db,  // sql
 		channel: ch,  // worker-pool
 		working: make(chan struct{}),
-		strm:    put, // stream
+		putter:  putter,
 	}
 }
 
