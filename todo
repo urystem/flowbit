@@ -91,3 +91,5 @@ import "sync/atomic"
 var ready atomic.Bool
 kerek
 
+one minute билу керек only тест па 
+

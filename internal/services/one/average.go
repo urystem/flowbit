@@ -12,7 +12,7 @@ func (one *oneMinute) insertAverage(ctx context.Context, from, to time.Time) {
 	fromInt, toInt := int(from.UnixMilli()), int(to.UnixMilli())
 	var avgs []domain.ExchangeAggregation
 	rdbIsnotWorking := one.IsNotWorking()
-	if !rdbIsnotWorking { // == working
+	if !rdbIsnotWorking {
 		avgsRed, err := one.red.GetAllAverages(ctx, fromInt, toInt)
 		if err != nil {
 			slog.Error("one minute", "redis error:", err)

@@ -20,6 +20,7 @@ import (
 type myApp struct {
 	ctx            context.Context
 	ctxCancelCause context.CancelCauseFunc
+	logger         *slog.Logger
 	strm           streams.StreamsInter      // service
 	red            outbound.RedisInterGlogal // adapter
 	workers        workers.WorkerPoolInter   // service
@@ -28,8 +29,10 @@ type myApp struct {
 	// srv            inbound.ServerInter // for init and for run
 }
 
-func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, error) {
-	app := &myApp{}
+func InitApp(ctx context.Context, cfg config.ConfigInter, logger *slog.Logger) (inbound.AppInter, error) {
+	app := &myApp{
+		logger: logger,
+	}
 	getPut := syncpool.NewSyncPoolExchange()
 	myStrm, err := app.initStreamsService(cfg.GetSourcesCfg(), getPut)
 	if err != nil {
@@ -43,7 +46,7 @@ func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, err
 	}
 	app.red = myRed
 
-	myDB, err := postgres.InitDB(app.ctx, cfg.GetDBConfig())
+	myDB, err := postgres.InitDB(ctx, cfg.GetDBConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -55,14 +58,16 @@ func InitApp(ctx context.Context, cfg config.ConfigInter) (inbound.AppInter, err
 	return app, nil
 }
 
-func (app *myApp) Run() error {
+func (app *myApp) Run(ctx context.Context) error {
+	app.ctx, app.ctxCancelCause = context.WithCancelCause(ctx)
 	slog.Info("services are starting")
+	app.strm.StartStreams(app.ctx)
 	err := app.one.Run(app.ctx)
 	if err != nil {
 		return err
 	}
 	app.workers.Start(app.ctx, app.one)
-	app.strm.StartStreams(app.ctx)
+
 	// time.Sleep(10 * time.Second)
 	// res, err := app.red.GetByLabel(app.ctx, 0, 0, "exchange=exchange1") // из мапа
 	// res, err := app.red.GetAvarages(context.TODO())
@@ -73,7 +78,9 @@ func (app *myApp) Run() error {
 	// 	fmt.Println(res)
 	// }
 	// app.initTicker()
-	// time.Sleep(10 * time.Minute)
+	// time.Sleep(1 * time.Minute)
+	app.strm.StopJustStreams()
+	app.strm.StartTestStream(app.ctx)
 	return nil
 	// return app.srv.ListenServe()
 }

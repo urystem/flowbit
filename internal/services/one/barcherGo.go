@@ -8,6 +8,7 @@ import (
 )
 
 func (one *oneMinute) goFuncBatcher() {
+	defer close(one.working)
 	for {
 		if len(one.batch) > 511 {
 			one.insertBatches()

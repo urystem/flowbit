@@ -16,8 +16,8 @@ import (
 func main() {
 	ctxBack := context.Background()
 	cfg := config.Load()
-
-	app, err := bootstrap.InitApp(ctxBack, cfg)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	app, err := bootstrap.InitApp(ctxBack, cfg, logger)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
@@ -28,7 +28,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := app.Run(); err != nil && err != http.ErrServerClosed {
+		if err := app.Run(ctxBack); err != nil && err != http.ErrServerClosed {
 			slog.Error("❌", " Server error:", err)
 			quit <- syscall.SIGTERM
 		}

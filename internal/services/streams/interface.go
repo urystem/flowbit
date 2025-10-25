@@ -8,9 +8,9 @@ import (
 
 type StreamsInter interface {
 	StartStreams(ctx context.Context) error
-	StopStreams()
 	StopJustStreams()
-	StopTestStream()
 	StartTestStream(ctx context.Context) error
+	StopTestStream()
 	ReturnCh() <-chan *domain.Exchange
+	StopStreams()
 }

@@ -13,7 +13,6 @@ func (rdb *myRedis) GetAllAverages(ctx context.Context, from, to int) ([]domain.
 	if err != nil {
 		return nil, err
 	}
-
 	avgs := make([]domain.ExchangeAggregation, len(keys))
 	for i, key := range keys {
 		parts := strings.SplitN(key, ":", 2)
