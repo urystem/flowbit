@@ -14,7 +14,7 @@ func (app *myApp) initStreamsService(cfg config.SourcesCfg, getter syncpool.Gett
 	strms := make([]outbound.StreamAdapterInter, 0, len(addrMap))
 	for name, addr := range addrMap {
 		strm := exchange.InitStream(name, addr, inter, getter.GetNewExchange)
-		err := strm.PingStream()
+		_, err := strm.PingStream()
 		if err != nil {
 			return nil, err
 		}

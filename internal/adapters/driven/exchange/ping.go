@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-func (s *stream) PingStream() error {
+func (s *stream) PingStream() (string, error) {
 	// conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "example.com:1234")
 	conn, err := net.DialTimeout("tcp", s.addr, 3*time.Second)
 	if err != nil {
-		return err
+		return s.exName, err
 	}
-	return conn.Close()
+	return s.exName, conn.Close()
 }

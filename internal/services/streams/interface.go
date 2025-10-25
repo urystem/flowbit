@@ -7,10 +7,15 @@ import (
 )
 
 type StreamsInter interface {
-	StartStreams(ctx context.Context) error
-	StopJustStreams()
-	StartTestStream(ctx context.Context) error
-	StopTestStream()
 	ReturnCh() <-chan *domain.Exchange
+	StartStreams(ctx context.Context) error
+	StreamUsecase
+}
+
+type StreamUsecase interface {
+	StopJustStreams()
+	StartTestStream() error
+	StopTestStream()
 	StopStreams()
+	CheckHealth() map[string]error
 }

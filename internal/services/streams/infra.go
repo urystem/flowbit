@@ -12,10 +12,10 @@ import (
 )
 
 type streams struct {
-	ctxStrm      context.Context
-	cancelStream context.CancelFunc
-	ctxTest      context.Context
-	cancelTest   context.CancelFunc
+	ctxMain      context.Context    // like backgroud
+	cancelStream context.CancelFunc // for control for stop
+	cancelTest   context.CancelFunc // for control for stop
+	testRunning  atomic.Bool
 	strms        []outbound.StreamAdapterInter
 	wg           sync.WaitGroup        // 3
 	collectCh    chan *domain.Exchange // all
@@ -31,18 +31,34 @@ func InitStreams(strms []outbound.StreamAdapterInter, getter syncpool.Getter) St
 	}
 }
 
-func (s *streams) StartStreams(ctx context.Context) error {
-	if s.ctxStrm != nil && s.ctxStrm.Err() == nil {
-		return fmt.Errorf("%s", "already running")
-	} else if s.closedCh.Load() {
+// for application for once
+func (s *streams) StartStreams(ctxMain context.Context) error {
+	if s.closedCh.Load() {
 		return fmt.Errorf("%s", "channel closed")
+	} else if s.ctxMain != nil {
+		return fmt.Errorf("%s", "already running")
 	}
-	s.ctxStrm, s.cancelStream = context.WithCancel(ctx)
+	s.ctxMain = ctxMain
+	s.StartJustStreams()
+	return nil
+}
+
+func (s *streams) StartJustStreams() {
+	ctx, cancel := context.WithCancel(s.ctxMain)
+	s.cancelStream = cancel
 	for _, strm := range s.strms {
 		s.wg.Add(1)
-		go s.mergeCh(strm.Subscribe(s.ctxStrm))
+		go s.mergeCh(strm.Subscribe(ctx))
 	}
-	return nil
+}
+
+func (s *streams) CheckHealth() map[string]error {
+	res := make(map[string]error)
+	for _, strm := range s.strms {
+		name, err := strm.PingStream()
+		res[name] = err
+	}
+	return res
 }
 
 func (s *streams) mergeCh(ch <-chan *domain.Exchange) {

@@ -10,23 +10,26 @@ import (
 )
 
 func (s *streams) StopTestStream() {
-	if s.cancelTest == nil {
+	if s.testRunning.Load() {
 		return
 	}
 	s.cancelTest()
+	s.testRunning.Store(false)
 }
 
-func (s *streams) StartTestStream(ctx context.Context) error {
-	if s.ctxTest != nil && s.ctxTest.Err() == nil {
-		return fmt.Errorf("%s", "test already running")
+func (s *streams) StartTestStream() error {
+	s.testRunning.Store(true)
+	if s.ctxMain == nil {
+		return fmt.Errorf("%s", "stream is inactive")
 	} else if s.closedCh.Load() {
 		return fmt.Errorf("%s", "channel closed")
 	}
-	s.ctxTest, s.cancelTest = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(s.ctxMain)
+	s.cancelTest = cancel
 	go func() {
 		for {
 			select {
-			case <-s.ctxTest.Done():
+			case <-ctx.Done():
 				return
 			default:
 				s.collectCh <- s.generator()

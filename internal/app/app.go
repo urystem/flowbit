@@ -80,7 +80,7 @@ func (app *myApp) Run(ctx context.Context) error {
 	// app.initTicker()
 	// time.Sleep(1 * time.Minute)
 	app.strm.StopJustStreams()
-	app.strm.StartTestStream(app.ctx)
+	app.strm.StartTestStream()
 	return nil
 	// return app.srv.ListenServe()
 }

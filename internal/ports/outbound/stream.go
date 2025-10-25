@@ -8,5 +8,5 @@ import (
 
 type StreamAdapterInter interface {
 	Subscribe(ctx context.Context) <-chan *domain.Exchange
-	PingStream() error
+	PingStream() (string, error)
 }
