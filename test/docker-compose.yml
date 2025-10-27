@@ -1,0 +1,67 @@
+services:
+    app:
+      build: .
+      ports:
+      # - ${HOST_PORT:-8080}:${SERVER_PORT:-8080}
+      - ${MARKET_TEST_HOSTPORT}:${MARKET_TEST_PORT}
+      container_name: marketflow
+      env_file:
+        - .env
+    #   depends_on:
+    #     redisDB:
+    #       condition: service_healthy
+    #     db:
+    #       condition: service_healthy
+    # exchange1:
+    #   image: terow/exchanges:v1
+    #   container_name: exchange1
+    #   ports:
+    #   - "40101:40101"
+
+    # exchange2:
+    #   image: terow/exchanges:v2
+    #   container_name: exchange2
+    #   ports:
+    #   - "40102:40102"
+
+    # exchange3:
+    #   image: terow/exchanges:v3
+    #   container_name: exchange3
+    #   ports:
+    #   - "40103:40103"
+    # redisDB:
+    #   image: redis:latest
+    #   container_name: marketflow-redis
+    #   # sysctls:
+    #   # - vm.overcommit_memory=1
+    #   ports:
+    #   - "${REDIS_PORT:-6379}:6379"
+    #   command: ["redis-server", "--requirepass", "${REDIS_PASS}"]
+    #   healthcheck:
+    #     test: ["CMD", "redis-cli", "ping"]
+    #     interval: 3s
+    #     timeout: 3s
+    #     retries: 5
+    # db:
+    #   image: postgres:alpine
+    #   container_name: marketflow_db
+    #   ports:
+    #    - ${DB_PORT:-5432}:5432
+    #   environment:
+    #     POSTGRES_USER: ${DB_USER:-ukabdoll}
+    #     POSTGRES_PASSWORD: ${DB_PASSWORD:-07654321}
+    #     POSTGRES_DB: ${DB_NAME:-marketflow}
+    #   volumes:
+    #     - ./internal/adapters/driven/postgres/migration/init.sql:/docker-entrypoint-initdb.d/init.sql
+    #   healthcheck:
+    #     test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+    #     interval: 3s
+    #     timeout: 5s
+    #     retries: 10 # Если база данных заработает после всех retries, контейнер не вернется в healthy автоматически!
+
+      # volumes:
+      #   - ./minio/data:/data   # ⬅ сохраняем в ./data локально
+      #   - ./minio/certs:/root/.minio/certs 
+
+# volumes:
+#   minio_data: 

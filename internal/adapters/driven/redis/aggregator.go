@@ -19,7 +19,7 @@ func (rdb *myRedis) GetAveragePrice(ctx context.Context, key string, from, to in
 		return 0, err
 	} else if len(avg) != 1 {
 		fmt.Println(avg, to-from)
-		return 0, fmt.Errorf("%s%d", "avg aggregation returned not 1 avg, it is", len(avg))
+		return 0, fmt.Errorf("%s%d%s", "avg aggregation returned not 1 avg, it is", len(avg), "key="+key)
 	}
 	return avg[0].Value, nil
 }

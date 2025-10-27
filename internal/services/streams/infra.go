@@ -16,6 +16,8 @@ type streams struct {
 	cancelStream context.CancelFunc // for control for stop
 	cancelTest   context.CancelFunc // for control for stop
 	testRunning  atomic.Bool
+	generate     outbound.GeneratorInter
+	tester       outbound.StreamAdapterInter
 	strms        []outbound.StreamAdapterInter
 	wg           sync.WaitGroup        // 3
 	collectCh    chan *domain.Exchange // all
@@ -23,9 +25,11 @@ type streams struct {
 	getter       syncpool.Getter // for generator
 }
 
-func InitStreams(strms []outbound.StreamAdapterInter, getter syncpool.Getter) StreamsInter {
+func InitStreams(strms []outbound.StreamAdapterInter, generate outbound.GeneratorInter, test outbound.StreamAdapterInter, getter syncpool.Getter) StreamsInter {
 	return &streams{
 		strms:     strms,
+		generate:  generate,
+		tester:    test,
 		collectCh: make(chan *domain.Exchange, 64),
 		getter:    getter,
 	}
@@ -44,6 +48,9 @@ func (s *streams) StartStreams(ctxMain context.Context) error {
 }
 
 func (s *streams) StartJustStreams() {
+	if s.closedCh.Load() {
+		return
+	}
 	ctx, cancel := context.WithCancel(s.ctxMain)
 	s.cancelStream = cancel
 	for _, strm := range s.strms {

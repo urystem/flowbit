@@ -1,26 +1,42 @@
-package test
+package main
 
-import "context"
+import (
+	"fmt"
+	"log"
+	"net"
+	"os"
+)
 
-func universal(ctx context.Context, f func()) {
-	finish := make(chan struct{})
-	go func() {
-		f()
-		finish <- struct{}{}
-	}()
-	select {
-	case <-finish:
+func main() {
+	port := os.Getenv("MARKET_TEST_PORT")
+	if port == "" {
+		port = "40100"
+	}
+	addr := "0.0.0.0" + ":" + port
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+
+	fmt.Println("Listening on", addr)
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Println("accept error:", err)
+			continue
+		}
+
+		fmt.Println("Client connected:", conn.RemoteAddr())
+		go func(c net.Conn) {
+			defer c.Close()
+			for {
+				c.Write([]byte("marketflow tick\n"))
+				// эмулируем потоковые данные
+				// time.Sleep(time.Second)
+			}
+		}(conn)
 	}
 }
-
-// 🧠 Абсолютно верно.
-// Ты попал в самую суть — Go не может прервать уже выполняющийся код,
-// если тот не проверяет ctx сам.
-// context.Context — это не «прерывание» в смысле ОС или сигнал,
-// а кооперативный механизм:
-
-// Контекст сообщает: «меня отменили», а твой код должен сам это заметить и остановиться.
-
-// 🔹 Почему это «не решается» полностью
-
-// Когда ты делаешь:

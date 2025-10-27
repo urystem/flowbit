@@ -1,21 +1,20 @@
 package config
 
 import (
-	"strconv"
+	"os"
 	"strings"
 	"time"
 )
 
 type sources struct {
+	testAddr string
 	hostAdrr map[string]string
 	interv   time.Duration
 }
 type SourcesCfg interface {
-	// GetPort(host string) uint16
-	// GetCountWorkers() uint8
+	GetTestAddr() string
 	GetInterval() time.Duration
 	GetAddresses() map[string]string
-	// GetCountOfAllWorkers() uint16
 }
 
 func (c *config) initSources() sources {
@@ -28,33 +27,26 @@ func (c *config) initSources() sources {
 	if len(addrSlc) == 0 {
 		panic("no addr")
 	}
-	lenAddr := len(addrSlc)
-	checkHost := make(map[string]struct{}, lenAddr)
-	checkPort := make(map[uint16]struct{}, lenAddr)
-	hostAddr := make(map[string]string)
-	for i := range addrSlc {
-		address := strings.Split(addrSlc[i], ":")
-		if len(address) != 2 {
-			panic("")
-		}
-		hostStr := strings.TrimSpace(address[0])
-		portStr := strings.TrimSpace(address[1])
-		port, err := strconv.ParseUint(portStr, 10, 16)
-		if err != nil {
-			panic(err)
-		}
-		checkHost[hostStr] = struct{}{}
-		checkPort[uint16(port)] = struct{}{}
-		hostAddr[hostStr] = hostStr + ":" + portStr
-	}
 
-	if lenAddr != len(checkHost) {
-		panic("duplicated host")
-	} else if len(checkPort) < lenAddr {
-		panic("duplicated port")
+	checkAddr := make(map[string]struct{})
+	testAddr := mustGetEnvString("MARKET_TEST_ADDRESS")
+	checkAddr[testAddr] = struct{}{}
+
+	exchanges := make(map[string]string)
+	for _, v := range addrSlc {
+		checkAddr[v] = struct{}{}
+		address := strings.Split(v, ":")
+		if len(address) != 2 {
+			os.Exit(1)
+		}
+		exchanges[address[0]] = v
+	}
+	if len(checkAddr)-1 != len(addrSlc) {
+		os.Exit(1)
 	}
 	return sources{
-		hostAdrr: hostAddr,
+		testAddr: testAddr,
+		hostAdrr: exchanges,
 		interv:   time.Duration(second) * time.Second,
 	}
 }
@@ -62,3 +54,5 @@ func (c *config) initSources() sources {
 func (s *sources) GetAddresses() map[string]string { return s.hostAdrr }
 
 func (s *sources) GetInterval() time.Duration { return s.interv }
+
+func (s *sources) GetTestAddr() string { return s.testAddr }

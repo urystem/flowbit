@@ -2,6 +2,7 @@ package app
 
 import (
 	"marketflow/internal/adapters/driven/exchange"
+	"marketflow/internal/adapters/driven/generator"
 	"marketflow/internal/config"
 	"marketflow/internal/ports/outbound"
 	"marketflow/internal/services/streams"
@@ -20,5 +21,11 @@ func (app *myApp) initStreamsService(cfg config.SourcesCfg, getter syncpool.Gett
 		}
 		strms = append(strms, strm)
 	}
-	return streams.InitStreams(strms, getter), nil
+	gen := generator.BuildGenerator("test", cfg.GetTestAddr(), cfg.GetInterval(), getter.GetNewExchange)
+	err := gen.Check()
+	if err != nil {
+		return nil, err
+	}
+	test := exchange.InitStream("test", cfg.GetTestAddr(), inter, getter.GetNewExchange)
+	return streams.InitStreams(strms, gen, test, getter), nil
 }

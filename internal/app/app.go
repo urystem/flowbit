@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"marketflow/internal/adapters/driven/postgres"
 	"marketflow/internal/adapters/driven/redis"
@@ -81,6 +82,11 @@ func (app *myApp) Run(ctx context.Context) error {
 	// time.Sleep(1 * time.Minute)
 	app.strm.StopJustStreams()
 	app.strm.StartTestStream()
+	time.Sleep(10 * time.Second)
+	fmt.Println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+	app.strm.StopTestStream()
+	// app.strm.StartJustStreams()
+	// fmt.Println(err)
 	return nil
 	// return app.srv.ListenServe()
 }

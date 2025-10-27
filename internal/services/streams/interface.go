@@ -13,6 +13,7 @@ type StreamsInter interface {
 }
 
 type StreamUsecase interface {
+	StartJustStreams()
 	StopJustStreams()
 	StartTestStream() error
 	StopTestStream()
