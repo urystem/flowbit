@@ -26,3 +26,7 @@ type RedisForOne interface {
 	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 	RedisChecker
 }
+
+type RedisUseCase interface {
+	RedisChecker
+}

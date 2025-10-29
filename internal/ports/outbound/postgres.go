@@ -23,3 +23,7 @@ type PgxForTimerAndBatcher interface {
 type PgxCheck interface {
 	CheckHealth(ctx context.Context) error
 }
+
+type PgxForUseCase interface {
+	PgxCheck
+}
