@@ -13,39 +13,43 @@ func (rdb *myRedis) GetAllAverages(ctx context.Context, from, to int) ([]domain.
 	if err != nil {
 		return nil, err
 	}
-	avgs := make([]domain.ExchangeAggregation, len(keys))
-	for i, key := range keys {
+	avgs := make([]domain.ExchangeAggregation, 0, len(keys))
+	for _, key := range keys {
 		parts := strings.SplitN(key, ":", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("%s%s", "invalid key:", key)
 		}
-		avgs[i].Source = parts[0]
-		avgs[i].Symbol = parts[1]
+
+		count, err := rdb.GetCount(ctx, key, from, to)
+		if err != nil {
+			return nil, err
+		} else if count == 0 {
+			continue
+		}
 
 		avgPrice, err := rdb.GetAveragePrice(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		}
 
-		avgs[i].AvgPrice = avgPrice
-
-		count, err := rdb.GetCount(ctx, key, from, to)
-		if err != nil {
-			return nil, err
-		}
-		avgs[i].Count = count
-
 		minPrice, err := rdb.GetMinimum(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		}
-		avgs[i].MinPrice = minPrice
 
 		maxPrice, err := rdb.GetMaximum(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		}
-		avgs[i].MaxPrice = maxPrice
+
+		avgs = append(avgs, domain.ExchangeAggregation{
+			Source:   parts[0],
+			Symbol:   parts[0],
+			Count:    count,
+			AvgPrice: avgPrice,
+			MinPrice: minPrice,
+			MaxPrice: maxPrice,
+		})
 	}
 	return avgs, nil
 }

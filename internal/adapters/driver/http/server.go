@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"marketflow/internal/adapters/driver/http/api"
 	"marketflow/internal/config"
+	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 )
 
@@ -13,19 +15,17 @@ type server struct {
 	*http.Server
 }
 
-// type server *http.Server
+// type server *httpus.Server
 
-func InitServer(cfg config.ServerCfg) outbound.ServerInter {
+func InitServer(cfg config.ServerCfg, use inbound.UsecaseInter) outbound.ServerInter {
 	return &server{&http.Server{
-		Addr: fmt.Sprintf(":%d", cfg.GetPort()),
+		Addr:    fmt.Sprintf(":%d", cfg.GetPort()),
+		Handler: api.NewRoute(use),
 	}}
 }
 
-func (srv *server) SetHandler(hand http.Handler) {
-	srv.Handler = hand
-}
-
 func (srv *server) ListenServe() error {
+	fmt.Println(srv.Addr)
 	return srv.ListenAndServe()
 }
 

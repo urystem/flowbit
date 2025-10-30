@@ -2,7 +2,6 @@ package workers
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"marketflow/internal/domain"
@@ -40,9 +39,6 @@ func (w *worker) Start() {
 		case ex, ok := <-w.job:
 			if !ok {
 				return // канал закрыт
-			}
-			if ex.Source == "test" {
-				fmt.Println(ex)
 			}
 			if !w.one.IsNotWorking() { // == working
 				err := w.rdb.Add(context.TODO(), ex)

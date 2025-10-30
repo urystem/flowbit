@@ -17,8 +17,9 @@ func (rdb *myRedis) GetAveragePrice(ctx context.Context, key string, from, to in
 	}).Result()
 	if err != nil {
 		return 0, err
-	} else if len(avg) != 1 {
-		fmt.Println(avg, to-from)
+	} else if ln := len(avg); ln == 0 {
+		return 0, nil
+	} else if ln > 1 {
 		return 0, fmt.Errorf("%s%d%s", "avg aggregation returned not 1 avg, it is", len(avg), "key="+key)
 	}
 	return avg[0].Value, nil
@@ -31,7 +32,9 @@ func (rdb *myRedis) GetCount(ctx context.Context, key string, from, to int) (uin
 	}).Result()
 	if err != nil {
 		return 0, err
-	} else if len(count) != 1 {
+	} else if ln := len(count); ln == 0 {
+		return 0, nil
+	} else if ln != 1 {
 		return 0, fmt.Errorf("%s%d", "count aggregation returned not 1 avg, it is ", len(count))
 	}
 	return uint(count[0].Value), nil
@@ -44,7 +47,9 @@ func (rdb *myRedis) GetMinimum(ctx context.Context, key string, from, to int) (f
 	}).Result()
 	if err != nil {
 		return 0, err
-	} else if len(minPrice) != 1 {
+	} else if ln := len(minPrice); ln == 0 {
+		return 0, nil
+	} else if ln != 1 {
 		return 0, fmt.Errorf("%s", "min aggregation returned not 1 avg")
 	}
 	return minPrice[0].Value, nil
@@ -57,7 +62,9 @@ func (rdb *myRedis) GetMaximum(ctx context.Context, key string, from, to int) (f
 	}).Result()
 	if err != nil {
 		return 0, err
-	} else if len(maxPrice) != 1 {
+	} else if ln := len(maxPrice); ln == 0 {
+		return 0, nil
+	} else if ln != 1 {
 		return 0, fmt.Errorf("%s", "max aggregation returned not 1 avg")
 	}
 	return maxPrice[0].Value, nil

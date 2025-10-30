@@ -2,6 +2,7 @@ package one
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -45,6 +46,7 @@ func (one *oneMinute) insertAverage(ctx context.Context, from, to time.Time) {
 	err := one.db.SaveWithCopyFrom(ctx, avgs, from)
 	if err != nil {
 		slog.Error("one minute", "save average error:", err)
+		fmt.Println(avgs)
 	} else {
 		slog.Info("saved to sql")
 	}

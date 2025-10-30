@@ -1,12 +1,8 @@
 package outbound
 
-import (
-	"context"
-	"net/http"
-)
+import "context"
 
 type ServerInter interface {
-	SetHandler(hand http.Handler)
 	ListenServe() error
 	ShutdownGracefully(ctx context.Context) error
 	RegisterOnShutDown(f func())

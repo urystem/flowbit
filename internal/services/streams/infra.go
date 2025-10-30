@@ -12,17 +12,18 @@ import (
 )
 
 type streams struct {
-	ctxMain      context.Context    // like backgroud
-	cancelStream context.CancelFunc // for control for stop
-	cancelTest   context.CancelFunc // for control for stop
-	testRunning  atomic.Bool
-	generate     outbound.GeneratorInter
-	tester       outbound.StreamAdapterInter
-	strms        []outbound.StreamAdapterInter
-	wg           sync.WaitGroup        // 3
-	collectCh    chan *domain.Exchange // all
-	closedCh     atomic.Bool
-	getter       syncpool.Getter // for generator
+	ctxMain        context.Context    // like backgroud
+	cancelStream   context.CancelFunc // for control for stop
+	cancelTest     context.CancelFunc // for control for stop
+	testRunning    atomic.Bool
+	streamsRunning atomic.Bool
+	generate       outbound.GeneratorInter
+	tester         outbound.StreamAdapterInter
+	strms          []outbound.StreamAdapterInter
+	wg             sync.WaitGroup        // 3
+	collectCh      chan *domain.Exchange // all
+	closedCh       atomic.Bool
+	getter         syncpool.Getter // for generator
 }
 
 func InitStreams(strms []outbound.StreamAdapterInter, generate outbound.GeneratorInter, test outbound.StreamAdapterInter, getter syncpool.Getter) StreamsInter {
@@ -48,9 +49,10 @@ func (s *streams) StartStreams(ctxMain context.Context) error {
 }
 
 func (s *streams) StartJustStreams() {
-	if s.closedCh.Load() {
+	if s.closedCh.Load() || s.streamsRunning.Load() {
 		return
 	}
+	s.streamsRunning.Store(true)
 	ctx, cancel := context.WithCancel(s.ctxMain)
 	s.cancelStream = cancel
 	for _, strm := range s.strms {
@@ -78,6 +80,7 @@ func (s *streams) mergeCh(ch <-chan *domain.Exchange) {
 func (s *streams) StopJustStreams() {
 	if s.cancelStream != nil {
 		s.cancelStream()
+		s.streamsRunning.Store(false)
 	}
 	s.wg.Wait()
 }

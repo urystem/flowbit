@@ -1,8 +1,8 @@
 package usecase
 
-func (u *myUsecase) SwitchToTest() error {
+func (u *myUsecase) SwitchToTest()  {
 	u.strm.StopJustStreams()
-	return u.strm.StartTestStream()
+	u.strm.StartTestStream()
 }
 
 func (u *myUsecase) SwitchToLive() {

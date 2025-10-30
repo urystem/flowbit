@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"marketflow/internal/adapters/driven/postgres"
 	"marketflow/internal/adapters/driven/redis"
+	server "marketflow/internal/adapters/driver/http"
 	"marketflow/internal/config"
 	"marketflow/internal/ports/inbound"
 	"marketflow/internal/ports/outbound"
 	"marketflow/internal/services/one"
 	"marketflow/internal/services/streams"
 	syncpool "marketflow/internal/services/syncPool"
+	"marketflow/internal/services/usecase"
 	"marketflow/internal/services/workers"
 )
 
@@ -27,7 +28,7 @@ type myApp struct {
 	workers        workers.WorkerPoolInter   // service
 	db             outbound.PgxInter         // adapter
 	one            one.OneMinuteGlobalInter  // service
-	// srv            inbound.ServerInter // for init and for run
+	server         outbound.ServerInter      //adapter
 }
 
 func InitApp(ctx context.Context, cfg config.ConfigInter, logger *slog.Logger) (inbound.AppInter, error) {
@@ -56,6 +57,8 @@ func InitApp(ctx context.Context, cfg config.ConfigInter, logger *slog.Logger) (
 	app.workers = workers.InitWorkers(cfg.GetWorkerCfg(), myRed, getPut, myStrm.ReturnCh())
 
 	app.one = one.NewTimerOneMinute(myRed, myDB, app.workers.ReturnChReadOnly(), getPut)
+
+	app.server = server.InitServer(cfg.GetServerCfg(), usecase.NewUsecase(myStrm, myDB, myRed))
 	return app, nil
 }
 
@@ -80,14 +83,14 @@ func (app *myApp) Run(ctx context.Context) error {
 	// }
 	// app.initTicker()
 	// time.Sleep(1 * time.Minute)
-	app.strm.StopJustStreams()
-	app.strm.StartTestStream()
-	time.Sleep(10 * time.Second)
-	fmt.Println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
-	app.strm.StopTestStream()
+	// app.strm.StopJustStreams()
+	// app.strm.StartTestStream()
+	// time.Sleep(10 * time.Second)
+	// fmt.Println("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+	// app.strm.StopTestStream()
 	// app.strm.StartJustStreams()
 	// fmt.Println(err)
-	return nil
+	return app.server.ListenServe()
 	// return app.srv.ListenServe()
 }
 

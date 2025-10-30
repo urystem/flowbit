@@ -2,7 +2,6 @@ package generator
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net"
 	"sync"
@@ -49,7 +48,6 @@ func (g *generator) Start(ctx context.Context) {
 				slog.Error("test generator", "listen", err)
 				continue
 			}
-			fmt.Println("solai", g.addr)
 			g.goFuncAcceptter(ctx, ln)
 		}
 	}

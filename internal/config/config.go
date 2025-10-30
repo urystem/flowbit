@@ -2,13 +2,12 @@ package config
 
 type config struct {
 	server serverCfg
-
-	db dbConfig
-
-	redis redisConfig
-	src   sources
-	wr    workerCfg
+	db     dbConfig
+	redis  redisConfig
+	src    sources
+	wr     workerCfg
 }
+
 type ConfigInter interface {
 	GetServerCfg() ServerCfg
 	GetDBConfig() DBConfig
@@ -19,7 +18,7 @@ type ConfigInter interface {
 
 func Load() ConfigInter {
 	conf := &config{}
-	// conf.server = conf.initServerCfg()
+	conf.server = conf.initServerCfg()
 	conf.db = conf.initDBConfig()
 	conf.redis = conf.initRedisConf()
 	conf.src = conf.initSources()
