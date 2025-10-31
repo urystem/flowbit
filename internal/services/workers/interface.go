@@ -9,7 +9,7 @@ import (
 
 type WorkerPoolInter interface {
 	ReturnChReadOnly() <-chan *domain.Exchange
-	Start(ctx context.Context, batch one.OneMinuteStatus)
+	Start(ctx context.Context, batch one.RedisNotWorking)
 	CleanAll()
 }
 

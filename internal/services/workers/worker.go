@@ -13,13 +13,13 @@ import (
 type worker struct {
 	job    <-chan *domain.Exchange
 	rdb    outbound.RedisInterForWorkers
-	one    one.OneMinuteStatus
+	one    one.RedisNotWorking
 	putter syncpool.Putter
 	fall   func(*domain.Exchange)
 	quit   chan struct{}
 }
 
-func (app *workerControl) initWorker(job <-chan *domain.Exchange, rdb outbound.RedisInterForWorkers, one one.OneMinuteStatus, putter syncpool.Putter, fallWrite func(*domain.Exchange)) workerInter {
+func (app *workerControl) initWorker(job <-chan *domain.Exchange, rdb outbound.RedisInterForWorkers, one one.RedisNotWorking, putter syncpool.Putter, fallWrite func(*domain.Exchange)) workerInter {
 	return &worker{
 		job:    job,
 		rdb:    rdb,

@@ -11,6 +11,7 @@ type PgxInter interface {
 	CloseDB()
 	PgxForTimerAndBatcher
 	PgxCheck
+	PgxForUseCase
 }
 
 type PgxForTimerAndBatcher interface {
@@ -26,4 +27,6 @@ type PgxCheck interface {
 
 type PgxForUseCase interface {
 	PgxCheck
+	GetLatestPriceBySymbol(ctx context.Context, symbol string) (float64, error)
+	GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (float64, error)
 }

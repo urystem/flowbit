@@ -4,9 +4,9 @@ import "context"
 
 type OneMinuteGlobalInter interface {
 	Run(ctx context.Context) error
-	OneMinuteStatus
+	RedisNotWorking
 }
 
-type OneMinuteStatus interface {
+type RedisNotWorking interface {
 	IsNotWorking() bool
 }

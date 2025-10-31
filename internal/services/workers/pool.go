@@ -24,7 +24,7 @@ type workerControl struct {
 	elastic        bool
 	rdb            outbound.RedisInterForWorkers
 	job            <-chan *domain.Exchange // from streams
-	one            one.OneMinuteStatus
+	one            one.RedisNotWorking
 	fallCh         chan *domain.Exchange
 	closedFallCh   atomic.Bool
 }
@@ -41,7 +41,7 @@ func InitWorkers(cfg config.WorkerCfg, rdb outbound.RedisInterForWorkers, putter
 	}
 }
 
-func (wc *workerControl) Start(ctx context.Context, rdbStatusAndBatch one.OneMinuteStatus) {
+func (wc *workerControl) Start(ctx context.Context, rdbStatusAndBatch one.RedisNotWorking) {
 	wc.ctx = ctx
 	wc.one = rdbStatusAndBatch
 	for range wc.maxOrDefWorker {

@@ -17,7 +17,6 @@ func (one *oneMinute) goFuncBatcher() {
 		case <-one.ctx.Done():
 			return
 		case <-one.working:
-			fmt.Println("redis worked")
 			one.insertBatches()
 		case ex := <-one.channel:
 			if !one.knowWasErr.Load() {
@@ -59,7 +58,7 @@ func (one *oneMinute) tryReconnect() {
 					continue
 				}
 				one.working <- struct{}{}
-
+				slog.Info("redis working")
 				return
 			}
 		}

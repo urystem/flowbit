@@ -7,7 +7,8 @@ import (
 )
 
 func (s *streams) StopTestStream() {
-	if !s.testRunning.Load() {
+	if !s.testRunning.Load() || s.closedCh.Load() {
+		slog.Warn("stream", "test", "already running")
 		return
 	}
 	s.cancelTest()

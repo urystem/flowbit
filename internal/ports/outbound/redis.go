@@ -13,6 +13,7 @@ type RedisInterForWorkers interface {
 type RedisInterGlogal interface {
 	// GetAndDelRandomCharacter(ctx context.Context) (*domain.Character, error)
 	RedisInterForWorkers
+	RedisUseCase
 	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
 	CloseRedis() error
 	RedisForOne
@@ -29,4 +30,6 @@ type RedisForOne interface {
 
 type RedisUseCase interface {
 	RedisChecker
+	GetLatestPriceBySymbol(ctx context.Context, symbol string) (float64, error)
+	GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (float64, error)
 }

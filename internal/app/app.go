@@ -28,7 +28,7 @@ type myApp struct {
 	workers        workers.WorkerPoolInter   // service
 	db             outbound.PgxInter         // adapter
 	one            one.OneMinuteGlobalInter  // service
-	server         outbound.ServerInter      //adapter
+	server         outbound.ServerInter      // adapter
 }
 
 func InitApp(ctx context.Context, cfg config.ConfigInter, logger *slog.Logger) (inbound.AppInter, error) {
@@ -58,7 +58,7 @@ func InitApp(ctx context.Context, cfg config.ConfigInter, logger *slog.Logger) (
 
 	app.one = one.NewTimerOneMinute(myRed, myDB, app.workers.ReturnChReadOnly(), getPut)
 
-	app.server = server.InitServer(cfg.GetServerCfg(), usecase.NewUsecase(myStrm, myDB, myRed))
+	app.server = server.InitServer(cfg.GetServerCfg(), usecase.NewUsecase(myStrm, myDB, myRed, app.one))
 	return app, nil
 }
 
