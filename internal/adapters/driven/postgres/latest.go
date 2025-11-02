@@ -2,6 +2,9 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"marketflow/internal/domain"
 )
 
 func (p *poolDB) GetLatestPriceBySymbol(ctx context.Context, symbol string) (float64, error) {
@@ -12,7 +15,11 @@ func (p *poolDB) GetLatestPriceBySymbol(ctx context.Context, symbol string) (flo
 			ORDER BY time_stamp DESC
 			LIMIT 1;`
 	var price float64
-	return price, p.QueryRow(ctx, query, symbol).Scan(&price)
+	err := p.QueryRow(ctx, query, symbol).Scan(&price)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, domain.ErrSymbolNotFound
+	}
+	return price, err
 }
 
 func (p *poolDB) GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (float64, error) {
@@ -23,5 +30,9 @@ func (p *poolDB) GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (fl
 		ORDER BY time_stamp DESC
 		LIMIT 1;`
 	var price float64
-	return price, p.QueryRow(ctx, query, ex, sym).Scan(&price)
+	err := p.QueryRow(ctx, query, sym).Scan(&price)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, domain.ErrSymbolNotFound
+	}
+	return price, err
 }

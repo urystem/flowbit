@@ -69,6 +69,7 @@ func (one *oneMinute) insertBatches() error {
 	err := one.db.FallBack(one.ctx, one.batch)
 	if err != nil {
 		slog.Error("fallback", "sql потеря данных", err)
+		return err
 	} else {
 		slog.Info("batched")
 	}
@@ -103,4 +104,17 @@ func (one *oneMinute) collectOldsAndSetAllow(ctx context.Context) error {
 	}
 	one.displaced.Store(0)
 	return nil
+}
+
+func (one *oneMinute) PushDone(ctx context.Context) {
+	ch := make(chan struct{})
+	select {
+	case <-ctx.Done():
+		go close(ch)
+		return
+	case ch <- struct{}{}:
+		select {
+			
+		}
+	}
 }

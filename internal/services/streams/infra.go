@@ -3,7 +3,6 @@ package streams
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 	"sync/atomic"
 
@@ -51,7 +50,6 @@ func (s *streams) StartStreams(ctxMain context.Context) error {
 
 func (s *streams) StartJustStreams() {
 	if s.closedCh.Load() || s.streamsRunning.Load() {
-		slog.Warn("stream", "live", "already running")
 		return
 	}
 	s.streamsRunning.Store(true)

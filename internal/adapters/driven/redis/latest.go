@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"marketflow/internal/domain"
 )
 
 func (rdb *myRedis) GetLatestPriceBySymbol(ctx context.Context, symbol string) (float64, error) {
@@ -10,7 +11,7 @@ func (rdb *myRedis) GetLatestPriceBySymbol(ctx context.Context, symbol string) (
 	if err != nil {
 		return 0, err
 	} else if len(res) == 0 {
-		return 0, fmt.Errorf("symbol not found")
+		return 0, domain.ErrSymbolNotFound
 	}
 	var ans float64
 	var lastTime int64
@@ -44,6 +45,9 @@ func (rdb *myRedis) GetLastPriceByExAndSym(ctx context.Context, ex, sym string) 
 	res, err := rdb.TSGet(ctx, ex+":"+sym).Result()
 	if err != nil {
 		return 0, err
+	}
+	if res.Timestamp == 0 {
+		return 0, domain.ErrSymbolNotFound
 	}
 	return res.Value, nil
 }

@@ -10,6 +10,7 @@ type HandleFuncs interface {
 	mode
 	health
 	latest
+	highest
 }
 
 func NewHandler(use inbound.UsecaseInter) HandleFuncs {

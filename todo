@@ -1,65 +1,4 @@
-.
-├── cmd/
-│   └── marketflow/          # точка входа
-│       └── main.go
-│
-├── internal/
-│   ├── domain/              # сущности, логика, правила
-│   │   ├── exchange.go
-│   │   ├── order.go
-│   │   └── errors.go
-│   │
-│   ├── ports/
-│   │   ├── inbound/         # входные интерфейсы (API, Worker, Stream)
-│   │   │   ├── ExchangeService.go
-│   │   │   ├── StreamConsumer.go
-│   │   │   └── HTTPHandler.go
-│   │   └── outbound/        # выходные интерфейсы (DB, Cache, MQ)
-│   │       ├── ExchangeRepo.go
-│   │       ├── RedisCache.go
-│   │       └── FallbackRepo.go
-│   │
-│   ├── adapters/
-│   │   ├── inbound/
-│   │   │   ├── http/
-│   │   │   │   ├── handler.go
-│   │   │   │   └── router.go
-│   │   │   └── worker/
-│   │   │       ├── consumer.go
-│   │   │       └── listener.go
-│   │   └── outbound/
-│   │       ├── postgres/
-│   │       │   ├── repo.go
-│   │       │   └── infra.go
-│   │       ├── redis/
-│   │       │   ├── cache.go
-│   │       │   └── infra.go
-│   │       └── fallback/
-│   │           └── writer.go
-│   │
-│   ├── services/            # application layer / usecases
-│   │   ├── exchange/
-│   │   │   ├── service.go
-│   │   │   └── batcher.go
-│   │   └── worker/
-│   │       └── pool.go
-│   │
-│   └── bootstrap/           # сбор зависимостей
-│       ├── app.go
-│       ├── redis.go
-│       ├── postgres.go
-│       ├── server.go
-│       └── worker.go
-│
-├── Dockerfile
-├── docker-compose.yml
-├── go.mod
-└── Makefile
-
-
-
 Почему адаптеры не должны видеть inbound-портыяё
-
 
 logger kerek
 
@@ -68,32 +7,13 @@ logger kerek
 Оба способа применяются в зависимости от цели —
 давай я покажу, что они значат и как выбирать.
 
-context init ка да run га да керек и ол дурс ыстеу керек done мен
-
-timer ге жондеу керек, skip minute керек
-
-// test live ыстеу керек, stream токтатып кайта косу
-
-fallbackты тексеру керек сосын
-
-yemaa
-
-func (batcher.insertBatch) InsertBatches() error
-func (batcher.statusRedisSynced) IsNotWorking() bool
-
-функциялар one 5а керек емес сияктыгой, ол ози редистен де sql ден де алады
-редис ошип калган болса, 1 рет skip жасап сол уакты сактап алу керек
-skip болган болса онда statusRedisSynced ты one minute сервис доступ беру керек
-
-
-import "sync/atomic"
-
-var ready atomic.Bool
-kerek
-
-one minute билу керек only тест па 
-
 gnet
 nginx
 libuv (Node.js)
 Netty (Java)
+
+
+/ready
+working sender
+batch is [][]any
+pushDOne for one with context with 2 select chan chan

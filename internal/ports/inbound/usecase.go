@@ -8,4 +8,5 @@ type UsecaseInter interface {
 	CheckHealth(ctx context.Context) any
 	GetLatestBySymbol(ctx context.Context, symbol string) (float64, error)
 	GetLatestPriceByExAndSym(context.Context, string, string) (float64, error)
+	GetHighestPriceBySym(ctx context.Context, sym string) (float64, error)
 }

@@ -32,4 +32,5 @@ type RedisUseCase interface {
 	RedisChecker
 	GetLatestPriceBySymbol(ctx context.Context, symbol string) (float64, error)
 	GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (float64, error)
+	GetHighestPriceBySymWithAlign(ctx context.Context, from, to int, sym string) (float64, error)
 }

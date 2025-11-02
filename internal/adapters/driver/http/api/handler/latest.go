@@ -5,10 +5,6 @@ import (
 	"net/http"
 )
 
-type myLatest struct {
-	Price float64 `json:"price"`
-}
-
 type latest interface {
 	GetLatestPriceBySymbol(w http.ResponseWriter, r *http.Request)
 	GetLatestPriceByExAndSym(w http.ResponseWriter, r *http.Request)
@@ -26,7 +22,7 @@ func (h *handler) GetLatestPriceBySymbol(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(&myLatest{Price: price}); err != nil {
+	if err := json.NewEncoder(w).Encode(&myPrice{Price: price}); err != nil {
 		http.Error(w, "failed to encode error", http.StatusInternalServerError)
 	}
 }
@@ -43,7 +39,7 @@ func (h *handler) GetLatestPriceByExAndSym(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(&myLatest{Price: price}); err != nil {
+	if err := json.NewEncoder(w).Encode(&myPrice{Price: price}); err != nil {
 		http.Error(w, "failed to encode error", http.StatusInternalServerError)
 	}
 }
