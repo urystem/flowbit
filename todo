@@ -16,4 +16,4 @@ Netty (Java)
 /ready
 working sender
 batch is [][]any
-pushDOne for one with context with 2 select chan chan
+pushDOne for one with context with 2 select chan chan(need optizimation for more request)

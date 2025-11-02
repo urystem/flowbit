@@ -26,20 +26,16 @@ func (one *oneMinute) insertAverage(ctx context.Context, from, to time.Time) {
 	}
 	if one.wasErrInMinute.Load() || one.displaced.Load() != 0 { // wasErr in this minute
 		one.wasErrInMinute.Store(false)
-		err := one.insertBatches()
+		one.PushDone(ctx)
+		avgsDB, err := one.db.GetAverageAndDelete(ctx, from, to)
 		if err != nil {
-			slog.Error("one minute", "insert", err)
+			slog.Error("one minute", "db error", err)
+		} else if rdbIsnotWorking {
+			slog.Info("get average from sql")
+			avgs = avgsDB
 		} else {
-			avgsDB, err := one.db.GetAverageAndDelete(ctx, from, to)
-			if err != nil {
-				slog.Error("one minute", "db error", err)
-			} else if rdbIsnotWorking {
-				slog.Info("get average from sql")
-				avgs = avgsDB
-			} else {
-				avgs = one.merger(avgs, avgsDB)
-				slog.Info("merged from sql and redis")
-			}
+			avgs = one.merger(avgs, avgsDB)
+			slog.Info("merged from sql and redis")
 		}
 	}
 

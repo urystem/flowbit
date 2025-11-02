@@ -27,6 +27,8 @@ func (u *myUsecase) GetLatestBySymbol(ctx context.Context, symbol string) (float
 		return 0, domain.ErrInternal
 	}
 
+	u.one.PushDone(ctx)
+
 	price, err := u.db.GetLatestPriceBySymbol(ctx, symbol)
 	if err == nil {
 		return price, nil
@@ -51,6 +53,7 @@ func (u *myUsecase) GetLatestPriceByExAndSym(ctx context.Context, ex, sym string
 		return 0, domain.ErrInternal
 	}
 
+	u.one.PushDone(ctx)
 	price, err := u.db.GetLastPriceByExAndSym(ctx, ex, sym)
 	if err == nil {
 		return price, nil

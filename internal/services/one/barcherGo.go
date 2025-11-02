@@ -8,7 +8,7 @@ import (
 )
 
 func (one *oneMinute) goFuncBatcher() {
-	defer close(one.working)
+	defer close(one.insertSignals)
 	for {
 		if len(one.batch) > 511 {
 			one.insertBatches()
@@ -16,8 +16,9 @@ func (one *oneMinute) goFuncBatcher() {
 		select {
 		case <-one.ctx.Done():
 			return
-		case <-one.working:
+		case done := <-one.insertSignals:
 			one.insertBatches()
+			close(done)
 		case ex := <-one.channel:
 			if !one.knowWasErr.Load() {
 				one.knowWasErr.Store(true)     // for batcher for this
@@ -57,19 +58,21 @@ func (one *oneMinute) tryReconnect() {
 					slog.Error("redis is unstable, try ")
 					continue
 				}
-				one.working <- struct{}{}
+				done := make(chan struct{})
+				one.insertSignals <- done
 				slog.Info("redis working")
+				<-done
 				return
 			}
 		}
 	}
 }
 
-func (one *oneMinute) insertBatches() error {
+func (one *oneMinute) insertBatches() {
 	err := one.db.FallBack(one.ctx, one.batch)
 	if err != nil {
 		slog.Error("fallback", "sql потеря данных", err)
-		return err
+		return
 	} else {
 		slog.Info("batched")
 	}
@@ -78,7 +81,6 @@ func (one *oneMinute) insertBatches() error {
 		putB(one.batch[i])
 	}
 	one.batch = one.batch[:0]
-	return err
 }
 
 func (one *oneMinute) collectOldsAndSetAllow(ctx context.Context) error {
@@ -110,11 +112,14 @@ func (one *oneMinute) PushDone(ctx context.Context) {
 	ch := make(chan struct{})
 	select {
 	case <-ctx.Done():
-		go close(ch)
+		close(ch)
 		return
-	case ch <- struct{}{}:
+	case one.insertSignals <- ch:
 		select {
-			
+		case <-ctx.Done():
+			return
+		case <-ch:
+			return
 		}
 	}
 }

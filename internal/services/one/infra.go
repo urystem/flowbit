@@ -18,18 +18,18 @@ type oneMinute struct {
 	red            outbound.RedisForOne
 	db             outbound.PgxForTimerAndBatcher
 	channel        <-chan *domain.Exchange // fallback
-	working        chan struct{}
+	insertSignals  chan chan<- struct{}
 	batch          []*domain.Exchange
 	putter         syncpool.Putter
 }
 
 func NewTimerOneMinute(red outbound.RedisForOne, db outbound.PgxForTimerAndBatcher, ch <-chan *domain.Exchange, putter syncpool.Putter) OneMinuteGlobalInter {
 	return &oneMinute{
-		red:     red, // redis
-		db:      db,  // sql
-		channel: ch,  // worker-pool
-		working: make(chan struct{}),
-		putter:  putter,
+		red:           red, // redis
+		db:            db,  // sql
+		channel:       ch,  // worker-pool
+		insertSignals: make(chan chan<- struct{}),
+		putter:        putter,
 	}
 }
 

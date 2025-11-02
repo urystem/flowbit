@@ -34,6 +34,7 @@ func (u *myUsecase) GetHighestPriceBySym(ctx context.Context, sym string) (float
 		return 0, domain.ErrInternal
 	}
 
+	u.one.PushDone(ctx)
 	price, err = u.db.GetHighestPriceBySymInBackup(ctx, sym)
 	if err == nil {
 		return price, nil

@@ -11,10 +11,10 @@ type myUsecase struct {
 	strm streams.StreamUsecase  // health
 	db   outbound.PgxForUseCase // health
 	rdb  outbound.RedisUseCase  // health
-	one  one.RedisNotWorking
+	one  one.OneForUseCase
 }
 
-func NewUsecase(strm streams.StreamUsecase, db outbound.PgxForUseCase, rdb outbound.RedisUseCase, one one.RedisNotWorking) inbound.UsecaseInter {
+func NewUsecase(strm streams.StreamUsecase, db outbound.PgxForUseCase, rdb outbound.RedisUseCase, one one.OneForUseCase) inbound.UsecaseInter {
 	return &myUsecase{
 		strm: strm,
 		db:   db,
