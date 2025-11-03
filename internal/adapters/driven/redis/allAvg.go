@@ -44,7 +44,7 @@ func (rdb *myRedis) GetAllAverages(ctx context.Context, from, to int) ([]domain.
 
 		avgs = append(avgs, domain.ExchangeAggregation{
 			Source:   parts[0],
-			Symbol:   parts[0],
+			Symbol:   parts[1],
 			Count:    count,
 			AvgPrice: avgPrice,
 			MinPrice: minPrice,

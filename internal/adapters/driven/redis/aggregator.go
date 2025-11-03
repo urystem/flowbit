@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -35,6 +36,7 @@ func (rdb *myRedis) GetCount(ctx context.Context, key string, from, to int) (uin
 	} else if ln := len(count); ln == 0 {
 		return 0, nil
 	} else if ln != 1 {
+		slog.Error("redis:", "it is not 1 value", count)
 		return 0, fmt.Errorf("%s%d", "count aggregation returned not 1 avg, it is ", len(count))
 	}
 	return uint(count[0].Value), nil

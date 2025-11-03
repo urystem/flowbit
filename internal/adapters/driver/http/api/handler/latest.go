@@ -11,7 +11,7 @@ type latest interface {
 }
 
 func (h *handler) GetLatestPriceBySymbol(w http.ResponseWriter, r *http.Request) {
-	price, err := h.use.GetLatestBySymbol(r.Context(), r.PathValue("symbol"))
+	ex, err := h.use.GetLatestBySymbol(r.Context(), r.PathValue("symbol"))
 	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
@@ -22,13 +22,13 @@ func (h *handler) GetLatestPriceBySymbol(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(&myPrice{Price: price}); err != nil {
+	if err := json.NewEncoder(w).Encode(ex); err != nil {
 		http.Error(w, "failed to encode error", http.StatusInternalServerError)
 	}
 }
 
 func (h *handler) GetLatestPriceByExAndSym(w http.ResponseWriter, r *http.Request) {
-	price, err := h.use.GetLatestPriceByExAndSym(r.Context(), r.PathValue("exchange"), r.PathValue("symbol"))
+	ex, err := h.use.GetLatestPriceByExAndSym(r.Context(), r.PathValue("exchange"), r.PathValue("symbol"))
 	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
@@ -39,7 +39,7 @@ func (h *handler) GetLatestPriceByExAndSym(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(&myPrice{Price: price}); err != nil {
+	if err := json.NewEncoder(w).Encode(ex); err != nil {
 		http.Error(w, "failed to encode error", http.StatusInternalServerError)
 	}
 }

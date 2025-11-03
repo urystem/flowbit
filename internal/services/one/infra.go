@@ -19,7 +19,7 @@ type oneMinute struct {
 	db             outbound.PgxForTimerAndBatcher
 	channel        <-chan *domain.Exchange // fallback
 	insertSignals  chan chan<- struct{}
-	batch          []*domain.Exchange
+	batch          [][]any
 	putter         syncpool.Putter
 }
 

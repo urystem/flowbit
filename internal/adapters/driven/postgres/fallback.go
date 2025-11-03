@@ -9,16 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (db *poolDB) FallBack(ctx context.Context, exs []*domain.Exchange) error {
-	rows := make([][]any, len(exs))
-	for i, v := range exs {
-		rows[i] = []any{
-			v.Source,
-			v.Symbol,
-			v.Price,
-			time.UnixMilli(v.Timestamp),
-		}
-	}
+func (db *poolDB) FallBack(ctx context.Context, rows [][]any) error {
 	_, err := db.CopyFrom(
 		ctx,
 		pgx.Identifier{"exchange_backup"},

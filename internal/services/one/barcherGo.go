@@ -9,6 +9,7 @@ import (
 
 func (one *oneMinute) goFuncBatcher() {
 	defer close(one.insertSignals)
+	put := one.putter.GetFuncExchange()
 	for {
 		if len(one.batch) > 511 {
 			one.insertBatches()
@@ -27,7 +28,13 @@ func (one *oneMinute) goFuncBatcher() {
 				slog.Info("redis not working now")
 				go one.tryReconnect()
 			}
-			one.batch = append(one.batch, ex)
+			one.batch = append(one.batch, []any{
+				ex.Source,
+				ex.Symbol,
+				ex.Price,
+				time.UnixMilli(ex.Timestamp),
+			})
+			put(ex)
 		}
 	}
 }
@@ -41,29 +48,30 @@ func (one *oneMinute) tryReconnect() {
 			return
 		case <-ti.C:
 			err := one.red.CheckHealth(one.ctx)
-			if err == nil {
-				if one.displaced.Load() != 0 {
-					err := one.collectOldsAndSetAllow(one.ctx)
-					if err != nil {
-						slog.Error("one minute", "try collect old", err)
-					}
-					slog.Info("old data's average also saved")
-					one.wasErrInMinute.Store(true) // tagy 1 ret tekseru ushin,
-				}
-				one.notWorking.Store(false) // give signal to workers
-				time.Sleep(2 * time.Second)
-				one.knowWasErr.Store(false) // give signal to batcher
-				time.Sleep(2 * time.Second)
-				if one.knowWasErr.Load() { // check again
-					slog.Error("redis is unstable, try ")
-					continue
-				}
-				done := make(chan struct{})
-				one.insertSignals <- done
-				slog.Info("redis working")
-				<-done
-				return
+			if err != nil {
+				break //only select, not for cycle
 			}
+			if one.displaced.Load() != 0 {
+				err := one.collectOldsAndSetAllow(one.ctx)
+				if err != nil {
+					slog.Error("one minute", "try collect old", err)
+				}
+				slog.Info("old data's average also saved")
+				one.wasErrInMinute.Store(true) // tagy 1 ret tekseru ushin,
+			}
+			one.notWorking.Store(false) // give signal to workers
+			time.Sleep(2 * time.Second)
+			one.knowWasErr.Store(false) // give signal to batcher
+			time.Sleep(2 * time.Second)
+			if one.knowWasErr.Load() { // check again
+				slog.Error("redis is unstable, try ")
+				break //only select, not for cycle
+			}
+			done := make(chan struct{})
+			one.insertSignals <- done
+			slog.Info("redis working")
+			<-done
+			return
 		}
 	}
 }
@@ -75,10 +83,6 @@ func (one *oneMinute) insertBatches() {
 		return
 	} else {
 		slog.Info("batched")
-	}
-	putB := one.putter.GetFuncExchange()
-	for i := range one.batch {
-		putB(one.batch[i])
 	}
 	one.batch = one.batch[:0]
 }

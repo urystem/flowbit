@@ -30,7 +30,15 @@ type RedisForOne interface {
 
 type RedisUseCase interface {
 	RedisChecker
-	GetLatestPriceBySymbol(ctx context.Context, symbol string) (float64, error)
-	GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (float64, error)
-	GetHighestPriceBySymWithAlign(ctx context.Context, from, to int, sym string) (float64, error)
+	latest
+	highest
+}
+
+type latest interface {
+	GetLatestPriceBySymbol(ctx context.Context, symbol string) (*domain.Exchange, error)
+	GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (*domain.Exchange, error)
+}
+
+type highest interface {
+	GetHighestPriceWithAlign(ctx context.Context, from int, sym string) (*domain.Exchange, error)
 }
