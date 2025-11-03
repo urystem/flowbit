@@ -11,6 +11,7 @@ type HandleFuncs interface {
 	health
 	latest
 	highest
+	lowest
 }
 
 func NewHandler(use inbound.UsecaseInter) HandleFuncs {

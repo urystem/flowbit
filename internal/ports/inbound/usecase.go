@@ -2,14 +2,39 @@ package inbound
 
 import (
 	"context"
+	"time"
+
 	"marketflow/internal/domain"
 )
 
 type UsecaseInter interface {
+	CheckHealth(ctx context.Context) any
+	mode
+	latest
+	highest
+	lowest
+}
+
+type mode interface {
 	SwitchToTest()
 	SwitchToLive()
-	CheckHealth(ctx context.Context) any
-	GetLatestBySymbol(ctx context.Context, symbol string) (*domain.Exchange, error)
-	GetLatestPriceByExAndSym(context.Context, string, string) (*domain.Exchange, error)
+}
+
+type highest interface {
 	GetHighestPriceBySym(ctx context.Context, sym string) (*domain.Exchange, error)
+	GetHighestPriceBySymWithDuration(ctx context.Context, sym string, duration time.Duration) (any, error)
+	GetHighestPriceByExSym(ctx context.Context, exName, sym string) (*domain.Exchange, error)
+	GetHighestPriceByExSymDuration(ctx context.Context, exName, sym string, dur time.Duration) (any, error)
+}
+
+type latest interface {
+	GetLatestBySymbol(ctx context.Context, symbol string) (*domain.Exchange, error)
+	GetLatestPriceByExAndSym(ctx context.Context, ex, sym string) (*domain.Exchange, error)
+}
+
+type lowest interface {
+	GetLowestPriceBySym(ctx context.Context, sym string) (*domain.Exchange, error)
+	GetLowestPriceBySymWithDuration(ctx context.Context, sym string, duration time.Duration) (any, error)
+	GetLowestPriceByExSym(ctx context.Context, exName, sym string) (*domain.Exchange, error)
+	GetLowestPriceByExSymDuration(ctx context.Context, exName, sym string, dur time.Duration) (any, error)
 }

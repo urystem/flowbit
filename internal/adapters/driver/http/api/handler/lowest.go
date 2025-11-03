@@ -5,17 +5,17 @@ import (
 	"time"
 )
 
-type highest interface {
-	GetHighestPriceBySym(w http.ResponseWriter, r *http.Request)
-	GetHighestPriceByExSym(w http.ResponseWriter, r *http.Request)
+type lowest interface {
+	GetLowestPriceBySym(w http.ResponseWriter, r *http.Request)
+	GetLowestPriceByExSym(w http.ResponseWriter, r *http.Request)
 }
 
-func (h *handler) GetHighestPriceBySym(w http.ResponseWriter, r *http.Request) {
+func (h *handler) GetLowestPriceBySym(w http.ResponseWriter, r *http.Request) {
 	duration := r.URL.Query().Get("period")
 	sym := r.PathValue("symbol")
 	ctx := r.Context()
 	if duration == "" {
-		exchange, err := h.use.GetHighestPriceBySym(ctx, sym)
+		exchange, err := h.use.GetLowestPriceBySym(ctx, sym)
 		h.writer(w, exchange, err)
 		return
 	}
@@ -24,17 +24,17 @@ func (h *handler) GetHighestPriceBySym(w http.ResponseWriter, r *http.Request) {
 		h.writer(w, nil, err)
 		return
 	}
-	zat, err := h.use.GetHighestPriceBySymWithDuration(ctx, sym, timeDuration)
+	zat, err := h.use.GetLowestPriceBySymWithDuration(ctx, sym, timeDuration)
 	h.writer(w, zat, err)
 }
 
-func (h *handler) GetHighestPriceByExSym(w http.ResponseWriter, r *http.Request) {
+func (h *handler) GetLowestPriceByExSym(w http.ResponseWriter, r *http.Request) {
 	duration := r.URL.Query().Get("period")
 	ex := r.PathValue("exchange")
 	sym := r.PathValue("symbol")
 	ctx := r.Context()
 	if duration == "" {
-		exchange, err := h.use.GetHighestPriceByExSym(ctx, ex, sym)
+		exchange, err := h.use.GetLowestPriceByExSym(ctx, ex, sym)
 		h.writer(w, exchange, err)
 		return
 	}
@@ -43,6 +43,6 @@ func (h *handler) GetHighestPriceByExSym(w http.ResponseWriter, r *http.Request)
 		h.writer(w, nil, err)
 		return
 	}
-	zat, err := h.use.GetHighestPriceByExSymDuration(ctx, ex, sym, timeDuration)
+	zat, err := h.use.GetLowestPriceByExSymDuration(ctx, ex, sym, timeDuration)
 	h.writer(w, zat, err)
 }

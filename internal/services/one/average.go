@@ -38,7 +38,10 @@ func (one *oneMinute) insertAverage(ctx context.Context, from, to time.Time) {
 			slog.Info("merged from sql and redis")
 		}
 	}
-
+	if len(avgs) == 0 {
+		slog.Error("one minute", "average", "no data to calculate average")
+		return
+	}
 	err := one.db.SaveWithCopyFrom(ctx, avgs, from)
 	if err != nil {
 		slog.Error("one minute", "save average error:", err)

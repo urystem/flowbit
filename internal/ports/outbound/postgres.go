@@ -23,6 +23,7 @@ type PgxForUseCase interface {
 	CheckHealth(ctx context.Context) error
 	pgxLatest
 	pgxHighest
+	pgxLowest
 }
 
 type pgxLatest interface {
@@ -33,6 +34,23 @@ type pgxLatest interface {
 type pgxHighest interface {
 	GetHighestPriceBySym(ctx context.Context, sym string) (*domain.Exchange, error)
 	GetHighestPriceBySymInBackup(ctx context.Context, sym string) (*domain.Exchange, error)
-	GetHighestPriceBySymWithDuration(ctx context.Context, sym string, from int64) (*domain.Exchange, error)
+	GetHighestPriceBySymWithDuration(ctx context.Context, sym string, from time.Time) (*domain.Exchange, error)
 	GetHighestPriceBySymWithDurationInAverage(ctx context.Context, sym string, from time.Time) (*domain.Exchange, error)
+
+	GetHighestPriceByExSym(ctx context.Context, exName, sym string) (*domain.Exchange, error)
+	GetHighestPriceByExSymInBackup(ctx context.Context, ex, sym string) (*domain.Exchange, error)
+	GetHighestPriceByExSymWithDurationInAverage(ctx context.Context, ex, sym string, from time.Time) (*domain.Exchange, error)
+	GetHighestPriceByExSymWithDuration(ctx context.Context, ex, sym string, from time.Time) (*domain.Exchange, error)
+}
+
+type pgxLowest interface {
+	GetLowestPriceBySym(ctx context.Context, sym string) (*domain.Exchange, error)
+	GetLowestPriceBySymInBackup(ctx context.Context, sym string) (*domain.Exchange, error)
+	GetLowestPriceByExSym(ctx context.Context, exName, sym string) (*domain.Exchange, error)
+	GetLowestPriceByExSymInBackup(ctx context.Context, ex, sym string) (*domain.Exchange, error)
+
+	GetLowestPriceBySymWithDuration(ctx context.Context, sym string, from time.Time) (*domain.Exchange, error)
+	GetLowestPriceBySymWithDurationInAverage(ctx context.Context, sym string, from time.Time) (*domain.Exchange, error)
+	GetLowestPriceByExSymWithDurationInAverage(ctx context.Context, ex, sym string, from time.Time) (*domain.Exchange, error)
+	GetLowestPriceByExSymWithDuration(ctx context.Context, ex, sym string, from time.Time) (*domain.Exchange, error)
 }

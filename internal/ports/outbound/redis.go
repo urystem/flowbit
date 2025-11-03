@@ -32,6 +32,7 @@ type RedisUseCase interface {
 	RedisChecker
 	latest
 	highest
+	lowest
 }
 
 type latest interface {
@@ -41,4 +42,10 @@ type latest interface {
 
 type highest interface {
 	GetHighestPriceWithAlign(ctx context.Context, from int, sym string) (*domain.Exchange, error)
+	GetHighestPriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.Exchange, error)
+}
+
+type lowest interface {
+	GetLowestPriceWithAlign(ctx context.Context, from int, sym string) (*domain.Exchange, error)
+	GetLowestPriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.Exchange, error)
 }

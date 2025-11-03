@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"marketflow/internal/domain"
@@ -10,8 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// TS.MRANGE 1761981278848 1761981338848 AGGREGATION MAX 60000 ALIGN 1761981278848 FILTER symbol=BTCUSDT
-func (r *myRedis) GetHighestPriceWithAlign(ctx context.Context, from int, sym string) (*domain.Exchange, error) {
+func (r *myRedis) GetLowestPriceWithAlign(ctx context.Context, from int, sym string) (*domain.Exchange, error) {
 	to := int(time.Now().UnixMilli())
 	high, err := r.TSMRangeWithArgs(
 		ctx,
@@ -19,7 +19,7 @@ func (r *myRedis) GetHighestPriceWithAlign(ctx context.Context, from int, sym st
 		to,
 		[]string{"symbol=" + sym},
 		&redis.TSMRangeOptions{
-			Aggregator:      redis.Max,
+			Aggregator:      redis.Min,
 			BucketDuration:  to - from,
 			Align:           from,
 			BucketTimestamp: "end",
@@ -33,6 +33,7 @@ func (r *myRedis) GetHighestPriceWithAlign(ctx context.Context, from int, sym st
 
 	res := &domain.Exchange{
 		Symbol: sym,
+		Price:  math.MaxFloat64,
 	}
 	for _, v := range high {
 		ex, err := r.getExchangeName(v[0])
@@ -51,7 +52,7 @@ func (r *myRedis) GetHighestPriceWithAlign(ctx context.Context, from int, sym st
 		if err != nil {
 			return nil, err
 		}
-		if myPrice > res.Price {
+		if myPrice < res.Price {
 			res.Source = ex
 			res.Timestamp = myTime
 			res.Price = myPrice
@@ -60,10 +61,10 @@ func (r *myRedis) GetHighestPriceWithAlign(ctx context.Context, from int, sym st
 	return res, nil
 }
 
-func (r *myRedis) GetHighestPriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.Exchange, error) {
+func (r *myRedis) GetLowestPriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.Exchange, error) {
 	to := int(time.Now().UnixMilli())
 	res, err := r.TSRangeWithArgs(ctx, exName+":"+sym, from, to, &redis.TSRangeOptions{
-		Aggregator:      redis.Max,
+		Aggregator:      redis.Min,
 		BucketDuration:  to - from,
 		Align:           from,
 		BucketTimestamp: "end",
@@ -73,7 +74,7 @@ func (r *myRedis) GetHighestPriceWithEx(ctx context.Context, from int, exName, s
 	} else if ln := len(res); ln == 0 {
 		return nil, domain.ErrSymbolNotFound
 	} else if ln > 1 {
-		return nil, fmt.Errorf("%s%v", "getHighestWithExSym: more than 1 element", res)
+		return nil, fmt.Errorf("%s%v", "getLowestWithExSym: more than 1 element", res)
 	}
 	return &domain.Exchange{
 		Source:    exName,

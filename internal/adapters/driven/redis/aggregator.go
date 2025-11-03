@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -12,6 +13,8 @@ import (
 // res сонда коп ман кайтарады
 // ал маган тек 1 еу керек
 func (rdb *myRedis) GetAveragePrice(ctx context.Context, key string, from, to int) (float64, error) {
+	from -= int(time.Minute)
+	to -= int(time.Minute)
 	avg, err := rdb.TSRangeWithArgs(ctx, key, from, to, &redis.TSRangeOptions{
 		Aggregator:     redis.Avg,
 		BucketDuration: to - from,
@@ -21,6 +24,7 @@ func (rdb *myRedis) GetAveragePrice(ctx context.Context, key string, from, to in
 	} else if ln := len(avg); ln == 0 {
 		return 0, nil
 	} else if ln > 1 {
+		fmt.Println(to, from)
 		return 0, fmt.Errorf("%s%d%s", "avg aggregation returned not 1 avg, it is", len(avg), "key="+key)
 	}
 	return avg[0].Value, nil
