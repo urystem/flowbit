@@ -16,10 +16,11 @@ type GetExchange struct {
 }
 
 type ExchangeAggregation struct {
-	Source   string
-	Symbol   string
-	Count    uint
-	AvgPrice float64
-	MinPrice float64
-	MaxPrice float64
+	Source    string    `json:"source,omitempty"`
+	Symbol    string    `json:"symbol,omitempty"`
+	Count     uint      `json:"count,omitempty"`
+	AvgPrice  float64   `json:"average_price,omitempty"`
+	MinPrice  float64   `json:"min_price,omitempty"`
+	MaxPrice  float64   `json:"max_price,omitempty"`
+	Timestamp time.Time `json:"timestamp,omitzero"`
 }

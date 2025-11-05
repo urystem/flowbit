@@ -14,7 +14,7 @@ type RedisInterGlogal interface {
 	// GetAndDelRandomCharacter(ctx context.Context) (*domain.Character, error)
 	RedisInterForWorkers
 	RedisUseCase
-	GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
+	// GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
 	CloseRedis() error
 	RedisForOne
 }
@@ -33,6 +33,7 @@ type RedisUseCase interface {
 	latest
 	highest
 	lowest
+	average
 }
 
 type latest interface {
@@ -48,4 +49,9 @@ type highest interface {
 type lowest interface {
 	GetLowestPriceWithAlign(ctx context.Context, from int, sym string) (*domain.Exchange, error)
 	GetLowestPriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.Exchange, error)
+}
+
+type average interface {
+	GetAveragePriceWithAlign(ctx context.Context, from int, sym string) (*domain.ExchangeAggregation, error)
+	GetAveragePriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.ExchangeAggregation, error)
 }

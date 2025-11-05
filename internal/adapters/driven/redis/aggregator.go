@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -12,12 +11,11 @@ import (
 // BucketDuration ар осындай уакыттагы орташа баганы кайтарады
 // res сонда коп ман кайтарады
 // ал маган тек 1 еу керек
-func (rdb *myRedis) GetAveragePrice(ctx context.Context, key string, from, to int) (float64, error) {
-	from -= int(time.Minute)
-	to -= int(time.Minute)
+func (rdb *myRedis) getAveragePrice(ctx context.Context, key string, from, to int) (float64, error) {
 	avg, err := rdb.TSRangeWithArgs(ctx, key, from, to, &redis.TSRangeOptions{
 		Aggregator:     redis.Avg,
 		BucketDuration: to - from,
+		Align:          from,
 	}).Result()
 	if err != nil {
 		return 0, err
@@ -30,10 +28,11 @@ func (rdb *myRedis) GetAveragePrice(ctx context.Context, key string, from, to in
 	return avg[0].Value, nil
 }
 
-func (rdb *myRedis) GetCount(ctx context.Context, key string, from, to int) (uint, error) {
+func (rdb *myRedis) getCount(ctx context.Context, key string, from, to int) (uint, error) {
 	count, err := rdb.TSRangeWithArgs(ctx, key, from, to, &redis.TSRangeOptions{
 		Aggregator:     redis.Count,
 		BucketDuration: to - from,
+		Align:          from,
 	}).Result()
 	if err != nil {
 		return 0, err
@@ -46,10 +45,11 @@ func (rdb *myRedis) GetCount(ctx context.Context, key string, from, to int) (uin
 	return uint(count[0].Value), nil
 }
 
-func (rdb *myRedis) GetMinimum(ctx context.Context, key string, from, to int) (float64, error) {
+func (rdb *myRedis) getMinimum(ctx context.Context, key string, from, to int) (float64, error) {
 	minPrice, err := rdb.TSRangeWithArgs(ctx, key, from, to, &redis.TSRangeOptions{
 		Aggregator:     redis.Min,
 		BucketDuration: to - from,
+		Align:          from,
 	}).Result()
 	if err != nil {
 		return 0, err
@@ -61,10 +61,11 @@ func (rdb *myRedis) GetMinimum(ctx context.Context, key string, from, to int) (f
 	return minPrice[0].Value, nil
 }
 
-func (rdb *myRedis) GetMaximum(ctx context.Context, key string, from, to int) (float64, error) {
+func (rdb *myRedis) getMaximum(ctx context.Context, key string, from, to int) (float64, error) {
 	maxPrice, err := rdb.TSRangeWithArgs(ctx, key, from, to, &redis.TSRangeOptions{
 		Aggregator:     redis.Max,
 		BucketDuration: to - from,
+		Align:          from,
 	}).Result()
 	if err != nil {
 		return 0, err

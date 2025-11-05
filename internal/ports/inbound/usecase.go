@@ -13,6 +13,7 @@ type UsecaseInter interface {
 	latest
 	highest
 	lowest
+	average
 }
 
 type mode interface {
@@ -37,4 +38,11 @@ type lowest interface {
 	GetLowestPriceBySymWithDuration(ctx context.Context, sym string, duration time.Duration) (any, error)
 	GetLowestPriceByExSym(ctx context.Context, exName, sym string) (*domain.Exchange, error)
 	GetLowestPriceByExSymDuration(ctx context.Context, exName, sym string, dur time.Duration) (any, error)
+}
+
+type average interface {
+	GetAveragePriceBySym(ctx context.Context, sym string) (*domain.ExchangeAggregation, error)
+	GetAveragePriceBySymWithDuration(ctx context.Context, sym string, dur time.Duration) (*domain.ExchangeAggregation, error)
+	GetAveragePriceByExSym(ctx context.Context, exName, sym string) (*domain.ExchangeAggregation, error)
+	GetAveragePriceByExSymDuration(ctx context.Context, exName, sym string, dur time.Duration) (any, error)
 }

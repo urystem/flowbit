@@ -60,7 +60,7 @@ func (u *myUsecase) GetHighestPriceBySymWithDuration(ctx context.Context, sym st
 			}
 			return ex, err
 		}
-		slog.Info("search by backup")
+		slog.Info("search by backup for get highest")
 		u.one.PushDone(ctx)
 		ex, err := u.db.GetHighestPriceBySymWithDuration(ctx, sym, from)
 		if err != nil {

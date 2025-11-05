@@ -4,10 +4,16 @@ import (
 	"context"
 	"fmt"
 	"marketflow/internal/domain"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func (rdb *myRedis) GetLatestPriceBySymbol(ctx context.Context, symbol string) (*domain.Exchange, error) {
-	res, err := rdb.TSMGet(ctx, []string{"symbol=" + symbol}).Result()
+
+	res, err := rdb.TSMGetWithArgs(ctx, []string{"symbol=" + symbol}, &redis.TSMGetOptions{
+		Latest:     true,
+		WithLabels: true,
+	}).Result()
 	if err != nil {
 		return nil, err
 	} else if len(res) == 0 {
@@ -16,11 +22,11 @@ func (rdb *myRedis) GetLatestPriceBySymbol(ctx context.Context, symbol string) (
 	ex := &domain.Exchange{
 		Symbol: symbol,
 	}
-
-	for exSym, v := range res {
+	for _, v := range res {
 		if len(v) != 2 {
 			return nil, fmt.Errorf("%s", "unknown error (getlatest)")
 		}
+
 		timePriceSlc, ok := v[1].([]any)
 		if !ok {
 			return nil, fmt.Errorf("%s", "unkown error (not []any)")
@@ -36,7 +42,10 @@ func (rdb *myRedis) GetLatestPriceBySymbol(ctx context.Context, symbol string) (
 			return nil, fmt.Errorf("%s", "invalid price")
 		}
 		if ex.Timestamp < currTime {
-			ex.Source = exSym
+			ex.Source, err = rdb.getExchangeName(v[0])
+			if err != nil {
+				return nil, err
+			}
 			ex.Timestamp = currTime
 			ex.Price = thisPrice
 		}
@@ -45,11 +54,12 @@ func (rdb *myRedis) GetLatestPriceBySymbol(ctx context.Context, symbol string) (
 }
 
 func (rdb *myRedis) GetLastPriceByExAndSym(ctx context.Context, ex, sym string) (*domain.Exchange, error) {
-	res, err := rdb.TSGet(ctx, ex+":"+sym).Result()
+	res, err := rdb.TSGetWithArgs(ctx, ex+":"+sym, &redis.TSGetOptions{
+		Latest: true,
+	}).Result()
 	if err != nil {
 		return nil, err
-	}
-	if res.Timestamp == 0 {
+	} else if res.Timestamp == 0 {
 		return nil, domain.ErrSymbolNotFound
 	}
 	return &domain.Exchange{

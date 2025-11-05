@@ -12,6 +12,7 @@ type HandleFuncs interface {
 	latest
 	highest
 	lowest
+	average
 }
 
 func NewHandler(use inbound.UsecaseInter) HandleFuncs {

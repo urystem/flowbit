@@ -20,24 +20,24 @@ func (rdb *myRedis) GetAllAverages(ctx context.Context, from, to int) ([]domain.
 			return nil, fmt.Errorf("%s%s", "invalid key:", key)
 		}
 
-		count, err := rdb.GetCount(ctx, key, from, to)
+		count, err := rdb.getCount(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		} else if count == 0 {
 			continue
 		}
 
-		avgPrice, err := rdb.GetAveragePrice(ctx, key, from, to)
+		avgPrice, err := rdb.getAveragePrice(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		}
 
-		minPrice, err := rdb.GetMinimum(ctx, key, from, to)
+		minPrice, err := rdb.getMinimum(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		}
 
-		maxPrice, err := rdb.GetMaximum(ctx, key, from, to)
+		maxPrice, err := rdb.getMaximum(ctx, key, from, to)
 		if err != nil {
 			return nil, err
 		}

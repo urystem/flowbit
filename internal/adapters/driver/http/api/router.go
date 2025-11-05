@@ -25,8 +25,8 @@ func NewRoute(use inbound.UsecaseInter) http.Handler {
 	mux.HandleFunc("GET /prices/lowest/{symbol}", hand.GetLowestPriceBySym)
 	mux.HandleFunc("GET /prices/lowest/{exchange}/{symbol}", hand.GetLowestPriceByExSym)
 
-	// mux.HandleFunc("GET /prices/average/{symbol}", nil)
-	// mux.HandleFunc("GET /prices/average/{exchange}/{symbol}", nil)
-
+	mux.HandleFunc("GET /prices/average/{symbol}", hand.GetAveragePriceBySym)
+	mux.HandleFunc("GET /prices/average/{exchange}/{symbol}", hand.GetAveragePriceByExSym)
 	return mux
 }
+
