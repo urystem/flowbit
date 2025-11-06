@@ -11,12 +11,14 @@ type PgxInter interface {
 	CloseDB()
 	PgxForTimerAndBatcher
 	PgxForUseCase
+	DBTestCleaner
 }
 
 type PgxForTimerAndBatcher interface {
 	GetAverageAndDelete(ctx context.Context, from, to time.Time) ([]domain.ExchangeAggregation, error)
 	SaveWithCopyFrom(ctx context.Context, avgs []domain.ExchangeAggregation, ti time.Time) error
 	FallBack(ctx context.Context, rows [][]any) error
+	CleanerTest(ctx context.Context) error
 }
 
 type PgxForUseCase interface {
@@ -66,4 +68,8 @@ type pgxAverage interface {
 	GetAveragePriceBySymInBackupTime(ctx context.Context, sym string, from time.Time) (*domain.ExchangeAggregation, error)
 	GetAveragePriceByExSymTime(ctx context.Context, exName, sym string, from time.Time) (*domain.ExchangeAggregation, error)
 	GetAveragePriceByExSymInBackupTime(ctx context.Context, exName, sym string, from time.Time) (*domain.ExchangeAggregation, error)
+}
+
+type DBTestCleaner interface {
+	CleanerTest(ctx context.Context) error
 }

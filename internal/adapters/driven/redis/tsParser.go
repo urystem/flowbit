@@ -1,8 +1,6 @@
 package redis
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func (r *myRedis) timeValParser(zat any) (int64, float64, error) {
 	timeVal, ok := zat.([]any)

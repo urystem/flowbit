@@ -13,6 +13,7 @@ func (s *streams) StopTestStream() {
 	s.cancelTest()
 	s.testRunning.Store(false)
 	slog.Info("stopped test mode")
+	
 }
 
 func (s *streams) StartTestStream() error {

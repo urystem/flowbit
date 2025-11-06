@@ -17,6 +17,7 @@ type RedisInterGlogal interface {
 	// GetByLabel(ctx context.Context, from, to int, keys ...string) ([]domain.Exchange, error)
 	CloseRedis() error
 	RedisForOne
+	RedisTestClean
 }
 
 type RedisChecker interface {
@@ -26,6 +27,7 @@ type RedisChecker interface {
 type RedisForOne interface {
 	GetAllAverages(ctx context.Context, from, to int) ([]domain.ExchangeAggregation, error)
 	RedisChecker
+	TestCleaner(ctx context.Context) error
 }
 
 type RedisUseCase interface {
@@ -54,4 +56,8 @@ type lowest interface {
 type average interface {
 	GetAveragePriceWithAlign(ctx context.Context, from int, sym string) (*domain.ExchangeAggregation, error)
 	GetAveragePriceWithEx(ctx context.Context, from int, exName, sym string) (*domain.ExchangeAggregation, error)
+}
+
+type RedisTestClean interface {
+	TestCleaner(ctx context.Context) error
 }

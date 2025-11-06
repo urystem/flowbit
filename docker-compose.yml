@@ -3,7 +3,7 @@ services:
       build: .
       ports:
       - ${HOST_PORT:-8080}:${SERVER_PORT:-8080}
-      - ${MARKET_TEST_HOSTPORT}:${MARKET_TEST_PORT}
+      - ${MARKET_TEST_HOSTPORT:-9099}:${MARKET_TEST_PORT:-40100}
       container_name: marketflow
       env_file:
         - .env
@@ -30,20 +30,20 @@ services:
       ports:
       - "40103:40103"
     redisDB:
-      image: redis:latest
+      image: redis:alpine3.22
       container_name: marketflow-redis
       # sysctls:
       # - vm.overcommit_memory=1
       ports:
       - "${REDIS_PORT:-6379}:6379"
-      command: ["redis-server", "--requirepass", "${REDIS_PASS}"]
+      command: ["redis-server", "--requirepass", "${REDIS_PASS:-mypass}"]
       healthcheck:
         test: ["CMD", "redis-cli", "ping"]
         interval: 3s
         timeout: 3s
         retries: 5
     db:
-      image: postgres:alpine
+      image: postgres:alpine3.22
       container_name: marketflow_db
       ports:
        - ${DB_PORT:-5432}:5432
@@ -54,7 +54,7 @@ services:
       volumes:
         - ./internal/adapters/driven/postgres/migration/init.sql:/docker-entrypoint-initdb.d/init.sql
       healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+        test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-ukabdoll} -d ${DB_NAME:-marketflow}" ]
         interval: 3s
         timeout: 5s
         retries: 10 # Если база данных заработает после всех retries, контейнер не вернется в healthy автоматически!

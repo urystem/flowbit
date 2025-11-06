@@ -1,4 +1,4 @@
-FROM golang:1.25.0-alpine3.22 AS builder
+FROM golang:alpine3.22 AS builder
 
 WORKDIR /app
 
@@ -7,10 +7,10 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o marketflow cmd/main.go
+RUN go build -ldflags="-s -w" -trimpath -o marketflow cmd/main.go
 
 
-FROM alpine
+FROM scratch
 
 WORKDIR /app
 

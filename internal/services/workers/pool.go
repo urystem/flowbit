@@ -100,13 +100,19 @@ func (wc *workerControl) elasTicker() {
 			wc.CleanAll()
 			return
 		case <-ticker.C:
-			kanallen := len(wc.job)
+			joblen := len(wc.job)
 			wlen := len(wc.workers)
-			if kanallen == 0 && wlen > 1 { // for panic
-				wc.removeWorker()
-			} else if qatynas := float32(wlen) / float32(kanallen); qatynas < 1.1 && wlen < int(wc.maxOrDefWorker) {
+			if joblen == 0 {
+				if wlen > 1 {
+					wc.removeWorker()
+				}
+				continue
+			}
+			ratio := float32(wlen) / float32(joblen)
+			switch {
+			case ratio < 0.9 && wlen < wc.maxOrDefWorker:
 				wc.addWorker()
-			} else if qatynas > 1.5 {
+			case ratio > 1.5:
 				wc.removeWorker()
 			}
 		}
