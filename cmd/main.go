@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	bootstrap "marketflow/internal/app"
+	"marketflow/internal/app"
 	"marketflow/internal/config"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	ctxBack := context.Background()
 	cfg := config.Load()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	app, err := bootstrap.InitApp(ctxBack, cfg, logger)
+	app, err := app.InitApp(ctxBack, cfg, logger)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
